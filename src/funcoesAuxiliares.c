@@ -102,7 +102,7 @@ struct t2fs_superbloco* leSuperBloco(void)
 		superbloco->BitMapReg.dataPtr[0] = (BYTE) buffer[179]<<24 | (BYTE) buffer[178]<<16 | (BYTE) buffer[177]<<8 | (BYTE) buffer[176];
 		superbloco->BitMapReg.dataPtr[1] = (BYTE) buffer[183]<<24 | (BYTE) buffer[182]<<16 | (BYTE) buffer[181]<<8 | (BYTE) buffer[180];
 
-		//Armazena onteiro de indireção simples, aponta prum bloco de índices onde estão ponteiros para blocos de dados do arquivo
+		//Armazena ponteiro de indireção simples, aponta prum bloco de índices onde estão ponteiros para blocos de dados do arquivo
 		superbloco->BitMapReg.singleIndPtr = (BYTE) buffer[187]<<24 | (BYTE) buffer[186]<<16 | (BYTE) buffer[185]<<8 | (BYTE) buffer[184];
 
 		//Armazena ptr de indireção dupla, apontandi prum bloco de índices onde estão outros ponteiros para blocos de índice. Esses últimos ptrs apontam para blocos de dados do arquivo.
@@ -128,12 +128,24 @@ struct t2fs_superbloco* leSuperBloco(void)
 
 struct t2fs_record get_registro_bitmap()
 {
-	struct t2fs_superbloco* superbloco = leSuperBloco();
+	//struct t2fs_superbloco* superbloco = leSuperBloco();
 	return superbloco->BitMapReg;
 }
 
+<<<<<<< HEAD
 BOOL caminhoExiste(char* caminho)
 {
 
 	return FALSE;
 }
+=======
+
+void init(void)
+{
+
+	superbloco = leSuperBloco();
+}
+
+
+
+>>>>>>> master

@@ -10,7 +10,7 @@ libt2fs.a: ./bin/t2fs.o ./bin/funcoesAuxiliares.o ./lib/apidisk.o
 	gcc -c ./src/funcoesAuxiliares.c -Wall -o ./bin/funcoesAuxiliares.o
 
 ./lib/apidisk.o: 
-	cd lib && ar x ./libapidisk.a 
+	cd lib && ar -x ./libapidisk.a 
 	mv ./lib/apidisk*.o ./lib/apidisk.o
 
 clean: 
