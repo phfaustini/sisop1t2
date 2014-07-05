@@ -5,7 +5,7 @@
 #include<stdlib.h>
 
 WORD tamanho_bloco=0;
-
+struct t2fs_superbloco* superBloco=NULL;
 char* le_bloco(int numero_bloco)
 {
 	char* buffer = (char*) malloc(tamanho_bloco);
@@ -44,7 +44,24 @@ BOOL escreve_bloco(char* bloco, int numero_bloco)
 	return TRUE;
 }
 
-struct t2fs_superbloco* leSuperBloco(void) //FUNCIONANDO
+struct t2fs_record* leRegistroArquivo(char* buffer) 
+{
+	if(superBloco==NULL)
+		leSuperBloco();
+
+	struct  t2fs_record* regFile = (struct t2fs_record*)malloc(sizeof(struct t2fs_record));
+	regFile->TypeVal = buffer[0];
+	memcpy(regFile->name,buffer+1,39);
+	regFile->blocksFileSize=(BYTE) buffer[43]<<24 | (BYTE) buffer[42]<<16 | (BYTE) buffer[41]<<8 | (BYTE) buffer[40];
+	regFile->bytesFileSize=(BYTE) buffer[47]<<24 | (BYTE) buffer[46]<<16 | (BYTE) buffer[45]<<8 | (BYTE) buffer[44];
+	regFile->dataPtr[0] = (BYTE) buffer[51]<<24 | (BYTE) buffer[50]<<16 | (BYTE) buffer[49]<<8 | (BYTE) buffer[48];
+	regFile->dataPtr[1] = (BYTE) buffer[55]<<24 | (BYTE) buffer[54]<<16 | (BYTE) buffer[53]<<8 | (BYTE) buffer[52];
+	regFile->singleIndPtr = (BYTE) buffer[59]<<24 | (BYTE) buffer[58]<<16 | (BYTE) buffer[57]<<8 | (BYTE) buffer[56];
+	regFile->doubleIndPtr = (BYTE) buffer[63]<<24 | (BYTE) buffer[62]<<16 | (BYTE) buffer[61]<<8 | (BYTE) buffer[60];
+	return regFile;
+}
+
+struct t2fs_superbloco* leSuperBloco(void)
 {
 	struct t2fs_superbloco* superbloco = (struct t2fs_superbloco*)malloc(sizeof(struct t2fs_superbloco));
 	char* buffer = (char*) malloc(TAM_SETOR);
@@ -103,6 +120,7 @@ struct t2fs_superbloco* leSuperBloco(void) //FUNCIONANDO
 		superbloco->RootDirReg.doubleIndPtr = (BYTE) buffer[255]<<24 | (BYTE) buffer[254]<<16 | (BYTE) buffer[253]<<8 | (BYTE) buffer[252];
 	
 		tamanho_bloco = superbloco->BlockSize;
+		superBloco = superbloco;
 		return superbloco;
 	}
 	return NULL;
@@ -112,4 +130,10 @@ struct t2fs_record get_registro_bitmap()
 {
 	struct t2fs_superbloco* superbloco = leSuperBloco();
 	return superbloco->BitMapReg;
+}
+
+BOOL caminhoExiste(char* caminho)
+{
+
+	return FALSE;
 }
