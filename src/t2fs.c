@@ -11,8 +11,13 @@ char *t2fs_identify (void)
 
 t2fs_file t2fs_create (char *nome)
 { // checar caminho valido,super bloco valido,bitmap valido
-	struct t2fs_record bloco = get_registro_bitmap();
-	printf("Ponteiro direto para bloco de dados do bitmap: %lX\n", bloco.dataPtr[0]);
+	//struct t2fs_record bloco = get_registro_bitmap();
+	//printf("Ponteiro direto para bloco de dados do bitmap: %lX\n", bloco.dataPtr[0]);
+
+	init();
+	printf("Bloco livre: %i\n", achablocolivre());
+
+
 
 return 1;
 }

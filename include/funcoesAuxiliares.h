@@ -10,9 +10,12 @@ struct t2fs_superbloco* leSuperBloco(void); // Retorna o superbloco, ou NULL cas
 char* le_bloco(int numero_bloco);
 BOOL escreve_bloco(char* bloco, int numero_bloco); // Retorna TRUE se conseguiu escrever os dados no bloco, FALSE caso contrário
 struct t2fs_record get_registro_bitmap();  // Retorna a estrutura de dados que descreve o arquivo que mantém o bitmap e 
-void init(void);
-extern struct t2fs_superbloco* superbloco;
-extern WORD tamanho_bloco;
 
+struct t2fs_superbloco* superbloco;
+WORD tamanho_bloco;
+
+void init(void);
+int achablocolivre(void);
+int achabit(char*,int*);
 
 #endif

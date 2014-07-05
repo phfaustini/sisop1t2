@@ -117,9 +117,111 @@ struct t2fs_record get_registro_bitmap()
 
 void init(void)
 {
+	char c = 0;
+	//int test = -2;
+	//c = (unsigned char)(1<<7)|(unsigned char)(1<<7);
 
 	superbloco = leSuperBloco();
+	escreve_bloco(&c, superbloco->BitMapReg.dataPtr[0]);
+	
+}
+//se retorna número do bloco se não achou retorna -1
+int achabit(char *buffer,int *counter)
+{
+
+unsigned char aux;
+	
+
+unsigned char comparador = (char)(1<<7);
+int i, j;
+	for(i = 0; i < tamanho_bloco ; i++)
+	{
+		aux = buffer[i];
+		comparador = (char)128;
+		for(j = 0 ; j < 8 ; j++)
+		{
+
+			if(((int)aux & (int)comparador) == 0)
+			{
+
+				return 1;
+
+			}else
+				{
+				printf("\n%i", (int)comparador);
+				comparador=comparador>>(unsigned char)1;
+				(*counter)++;
+				}
+		}
+		
+		
+	}
+
+
+return 0;
 }
 
+
+int achablocolivre()
+{
+	int counter = 0, ret = 0, i, j;
+	char *buffer, *buffer2;
+	
+	//direto 1
+	buffer = le_bloco(superbloco->BitMapReg.dataPtr[0]);
+	printf("Buffer:\n%i\n", (int)buffer[0]);
+	printf("%i\n", (int)buffer[1]);
+	printf("%i\n", (int)buffer[2]);
+	printf("%i\n", (int)buffer[3]);
+	ret = achabit(buffer, &counter);	
+	
+	if(ret == 1)
+		return counter;
+
+	//direto 2
+	buffer = le_bloco(superbloco->BitMapReg.dataPtr[1]);
+	ret = achabit(buffer, &counter);	
+
+	if(ret == 1)
+		return counter;
+
+
+	//indireção simples
+	long int end;
+	buffer = le_bloco(superbloco->BitMapReg.singleIndPtr);
+		//cada 4 posições formam um endereço de bloco
+		for(i = 0; i<(tamanho_bloco/4);i+=4)
+		{
+			end = buffer[i]<<24 | buffer[i+1]<<16 | buffer[i+2]<<8| buffer[i+3];
+			buffer = le_bloco(end);
+			ret = achabit(buffer, &counter);	
+
+			if(ret== 1)
+				return counter;
+
+		}
+
+
+	//indireção dupla
+	buffer2 = le_bloco(superbloco->BitMapReg.doubleIndPtr);
+	for(j = 0; j<(tamanho_bloco/4);j+=4)
+		
+		end = buffer2[j]<<24 | buffer2[j+1]<<16 | buffer2[j+2]<<8| buffer2[j+3];
+		buffer = le_bloco(end);
+		for(i = 0; i<(tamanho_bloco/4);i+=4)
+		{
+			end = buffer[i]<<24 | buffer[i+1]<<16 | buffer[i+2]<<8| buffer[i+3];
+			buffer = le_bloco(end);
+			ret = achabit(buffer, &counter);	
+
+			if(ret == 1)
+				return counter;
+
+		}
+
+
+
+return -1;
+}
 
 
