@@ -121,13 +121,5 @@ void init(void)
 	superbloco = leSuperBloco();
 }
 
-void leBitmap()
-{
 
-	leBloco(superbloco->BitMapReg.dataPtr[0]);
-	superbloco->BitMapReg.dataPtr[1];
-	superbloco->BitMapReg.singleIndPtr;
-	superbloco->RootDirReg.doubleIndPtr;
-
-}
 
