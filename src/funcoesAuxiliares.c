@@ -4,8 +4,9 @@
 #include<stdio.h>
 #include<stdlib.h>
 
-WORD tamanho_bloco=0;
 struct t2fs_superbloco* superBloco=NULL;
+WORD tamanho_bloco=0;
+
 char* le_bloco(int numero_bloco)
 {
 	char* buffer = (char*) malloc(tamanho_bloco);
@@ -14,7 +15,10 @@ char* le_bloco(int numero_bloco)
 	if(tamanho_bloco==0)	//Caso esta variável global ainda não tenha sido atualizada pela função leSuperBloco
 		return NULL;
 
-	/*Sobre os índices do for: começa lendo em numero_bloco*numero_setores porque um bloco possui um ou mais setores. Por exemplo,no caso de um bloco possuir 4 setores, e quisermos ler o 2° bloco (bloco 1), precisamos começar a ler a partir do quinto setor (setor 4). Neste caso, teremos que ler ATÉ o oitavo setor (setor 7), que é dado por numero_bloco*numero_setores+numero_setores (neste caso, 1*4+4 = 8, então ele lê até o 7)*/
+	/*Sobre os índices do for: começa lendo em numero_bloco*numero_setores porque um bloco possui um ou mais setores. 
+	Por exemplo,no caso de um bloco possuir 4 setores, e quisermos ler o 2° bloco (bloco 1), precisamos começar a ler a 
+	partir do quinto setor (setor 4). Neste caso, teremos que ler ATÉ o oitavo setor (setor 7), que é dado por 
+	numero_bloco*numero_setores+numero_setores (neste caso, 1*4+4 = 8, então ele lê até o 7)*/
 	for(i=numero_bloco*numero_setores;i<numero_bloco*numero_setores+numero_setores;i++)
 	{
 		if(read_sector(i,buffer+offset)!=0) // Armazena os bytes dos primeiros setores nas primeiras posições do buffer
@@ -22,6 +26,24 @@ char* le_bloco(int numero_bloco)
 		offset+=TAM_SETOR;
 	}
 	return buffer;
+}
+
+BOOL inicializarInode(char* nome, DWORD bloco)
+{
+	//t2fs_record* inode=(t2fs_record*) malloc(sizeof(t2fs_record));
+	/*if(strlen(nome)<40 && bloco < superBloco->NofBlocks)
+	{
+		inode->name = nome;
+		inode->bytesFileSize = 1024; // Um arquivo ocupa pelo menos um bloco, que tem 1024b
+		inode->blocksFileSize = 1; //Pois um arquivo recém criado vai ser colocado em um bloco
+		inode->TypeVal = 1; // Por default é arquivo regular
+		inode.doubleIndPtr=???
+		inode.singleIndPtr = ???
+		inode.dataPtr[0]=
+		inode.dataPtr[1]=
+
+	}*/
+	return FALSE;
 }
 
 BOOL escreve_bloco(char* bloco, int numero_bloco)
@@ -44,24 +66,8 @@ BOOL escreve_bloco(char* bloco, int numero_bloco)
 	return TRUE;
 }
 
-struct t2fs_record* leRegistroArquivo(char* buffer) 
-{
-	if(superBloco==NULL)
-		leSuperBloco();
 
-	struct  t2fs_record* regFile = (struct t2fs_record*)malloc(sizeof(struct t2fs_record));
-	regFile->TypeVal = buffer[0];
-	memcpy(regFile->name,buffer+1,39);
-	regFile->blocksFileSize=(BYTE) buffer[43]<<24 | (BYTE) buffer[42]<<16 | (BYTE) buffer[41]<<8 | (BYTE) buffer[40];
-	regFile->bytesFileSize=(BYTE) buffer[47]<<24 | (BYTE) buffer[46]<<16 | (BYTE) buffer[45]<<8 | (BYTE) buffer[44];
-	regFile->dataPtr[0] = (BYTE) buffer[51]<<24 | (BYTE) buffer[50]<<16 | (BYTE) buffer[49]<<8 | (BYTE) buffer[48];
-	regFile->dataPtr[1] = (BYTE) buffer[55]<<24 | (BYTE) buffer[54]<<16 | (BYTE) buffer[53]<<8 | (BYTE) buffer[52];
-	regFile->singleIndPtr = (BYTE) buffer[59]<<24 | (BYTE) buffer[58]<<16 | (BYTE) buffer[57]<<8 | (BYTE) buffer[56];
-	regFile->doubleIndPtr = (BYTE) buffer[63]<<24 | (BYTE) buffer[62]<<16 | (BYTE) buffer[61]<<8 | (BYTE) buffer[60];
-	return regFile;
-}
-
-struct t2fs_superbloco* leSuperBloco(void)
+struct t2fs_superbloco* leSuperBloco(void) //FUNCIONANDO
 {
 	struct t2fs_superbloco* superbloco = (struct t2fs_superbloco*)malloc(sizeof(struct t2fs_superbloco));
 	char* buffer = (char*) malloc(TAM_SETOR);
@@ -120,7 +126,7 @@ struct t2fs_superbloco* leSuperBloco(void)
 		superbloco->RootDirReg.doubleIndPtr = (BYTE) buffer[255]<<24 | (BYTE) buffer[254]<<16 | (BYTE) buffer[253]<<8 | (BYTE) buffer[252];
 	
 		tamanho_bloco = superbloco->BlockSize;
-		superBloco = superbloco;
+		superBloco=superbloco;
 		return superbloco;
 	}
 	return NULL;
@@ -128,24 +134,33 @@ struct t2fs_superbloco* leSuperBloco(void)
 
 struct t2fs_record get_registro_bitmap()
 {
-	//struct t2fs_superbloco* superbloco = leSuperBloco();
+	struct t2fs_superbloco* superbloco = leSuperBloco();
 	return superbloco->BitMapReg;
 }
 
-<<<<<<< HEAD
-BOOL caminhoExiste(char* caminho)
-{
 
-	return FALSE;
+struct t2fs_record* leRegistroArquivo(char* buffer)
+{
+	if(superBloco==NULL)
+		leSuperBloco();
+
+	struct t2fs_record* regFile = (struct t2fs_record*)malloc(sizeof(struct t2fs_record));
+	regFile->TypeVal = buffer[0];
+	memcpy(regFile->name,buffer+1,39);
+	regFile->blocksFileSize=(BYTE) buffer[43]<<24 | (BYTE) buffer[42]<<16 | (BYTE) buffer[41]<<8 | (BYTE) buffer[40];
+	regFile->bytesFileSize=(BYTE) buffer[47]<<24 | (BYTE) buffer[46]<<16 | (BYTE) buffer[45]<<8 | (BYTE) buffer[44];
+	regFile->dataPtr[0] = (BYTE) buffer[51]<<24 | (BYTE) buffer[50]<<16 | (BYTE) buffer[49]<<8 | (BYTE) buffer[48];
+	regFile->dataPtr[1] = (BYTE) buffer[55]<<24 | (BYTE) buffer[54]<<16 | (BYTE) buffer[53]<<8 | (BYTE) buffer[52];
+	regFile->singleIndPtr = (BYTE) buffer[59]<<24 | (BYTE) buffer[58]<<16 | (BYTE) buffer[57]<<8 | (BYTE) buffer[56];
+	regFile->doubleIndPtr = (BYTE) buffer[63]<<24 | (BYTE) buffer[62]<<16 | (BYTE) buffer[61]<<8 | (BYTE) buffer[60];
+	return regFile;
 }
-=======
 
 void init(void)
 {
 
-	superbloco = leSuperBloco();
+	leSuperBloco();
 }
 
 
 
->>>>>>> master
