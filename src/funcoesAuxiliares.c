@@ -69,11 +69,6 @@ BOOL escreve_bloco(char* bloco, int numero_bloco)
 	return TRUE;
 }
 
-BOOL escreve_superbloco(char* dados)
-{
-
-}
-
 struct t2fs_superbloco* leSuperBloco(void) 
 {
 	struct t2fs_superbloco* superbloco = (struct t2fs_superbloco*)malloc(sizeof(struct t2fs_superbloco));
@@ -242,15 +237,28 @@ return -1;
 
 int conta_niveis_caminho(char* caminho)
 {
-	char* buffer = (char*) malloc(38); // Um nome tem até 39 caracteres, mas como um caminho sempre começa com '/' pus 38
-	int i=0, niveis=1;
+	int i=1, niveis=0;
 	if (caminho!=NULL && caminho[0]=='/')
 	{
-		while(caminho[i+1]='/')
+		while(caminho[i]!='\0')
 		{
-			buffer[i]=caminho[i];
+			if(caminho[i-1]=='/')
+				niveis++;
+			i++;
 		}
-		
+		return niveis;
 	}
-	else return 0;
+	return -1;
+}
+
+int caminho_valido(char* caminho)
+{
+	int niveis;
+
+	niveis = conta_niveis_caminho(caminho);
+	
+	if(niveis==-1) // Testa se o caminho está mal formatado
+		return -1;
+
+	return 1; //NÃOA CABEI ESSA FUNCAO
 }
