@@ -176,13 +176,13 @@ unsigned char comparador = (char)(1<<7);
 
 int i, j;
 
-	for(i = 0; i < tamanho_bloco ; i++)
+	for(i = 0; i < tamanho_bloco && *counter < superbloco->NofBlocks; i++)
 	{
 
 
 		aux = buffer[i];
 		comparador = (char)(1<<7);
-		for(j = 0 ; j < 8 ; j++)
+		for(j = 0 ; j < 8 && *counter < superbloco->NofBlocks; j++)
 		{
 		
 			if(((unsigned char)aux & (unsigned char)comparador) == 0)

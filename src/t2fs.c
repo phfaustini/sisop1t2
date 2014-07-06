@@ -16,5 +16,6 @@ t2fs_file t2fs_create (char *nome)
 
 	init();
 	printf("Bloco livre: %i\n", achablocolivre());
+
 return 1;
 }
