@@ -13,14 +13,14 @@ struct t2fs_record get_registro_bitmap();  // Retorna a estrutura de dados que d
 struct t2fs_record get_registro_raiz(); // Análogo à anterior, mas para a raiz
 void printBloco(int bloco);
 void printSetor(char* buffer, int inicio, int fim);
-BOOL procura_descritor_num_diretorio(int qtde_blocos, char* nome, DWORD bloco, DWORD* offset); /*Offset é o deslocamento dentro do
+struct t2fs_record* procura_descritor_num_diretorio(int qtde_blocos, char* nome, DWORD bloco, DWORD* offset); /*Offset é o deslocamento dentro do
 																							bloco em bytes para chegar no arquivo. 
 																							Assume que ponteiro já venha alocado*/
 struct t2fs_record* le_t2fs_record(char* buffer); // Assume que recebe 64 bytes..
 char* nome_final(char* final); // Recebe um caminho completo e devolve o final (e.g. /home/pedro/alvo retorna alvo)
+char* subcaminho(char* caminho, int j);
 int conta_niveis_caminho(char* caminho); // /home/pedro/algo tem 3 níves. Se for caminho inválido (e.g. #2crd/teste) retorna -1
-int procura_descritores(DWORD bloco, int niveis, char* caminho, char* final);
-BOOL procura_descritor_num_diretorio(int qtde_blocos, char* nome, DWORD bloco, DWORD* offset);
+int procura_descritores(DWORD bloco, int niveis, char* caminho, char* final, struct t2fs_record* descritor);
 int caminho_valido(char* caminho); /* Há três retornos:
 									-1: caminho inválido (char* vazio, não comece com '/', nao tenha algum diretorio do meio)
 									 0: caminho válido, mas o arquivo ao final do caminho não existe no diretório

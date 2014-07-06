@@ -16,12 +16,14 @@ t2fs_file t2fs_create (char *nome)
 
 	init();
 
-	printBloco(2); // Recebe como parâmetro o bloco a ser printado.
+	//printBloco(8); // Recebe como parâmetro o bloco a ser printado.
 	//printf("%d\n", caminho_valido("/teste1"));
 	//printf("Bloco livre: %i\n", achablocolivre());
-	printf("%d\n", caminho_valido("/dir1"));
+	
+	struct t2fs_record* d = procura_descritor_num_diretorio(1, "teste1", 1, (DWORD*)malloc(sizeof(DWORD)));
+	printf("%d\n",caminho_valido("/di1/algo"));
 
-	printf("Bloco livre: %i\n", achablocolivre());
+	//printf("Bloco livre: %i\n", achablocolivre());
 
 
 return 1;

@@ -308,7 +308,7 @@ struct t2fs_record* le_t2fs_record(char* buffer)
 
 // FUNÇÕES PARA ACHAR UM ARQUIVO A PARTIR DE UM CAMINHO
 
-int conta_niveis_caminho(char* caminho)
+int conta_niveis_caminho(char* caminho) //OK
 {
 	int i=1, niveis=0;
 	if (caminho!=NULL && caminho[0]=='/')
@@ -324,7 +324,7 @@ int conta_niveis_caminho(char* caminho)
 	return -1;
 }
 
-char* nome_final(char* caminho)
+char* nome_final(char* caminho) //OK
 {	//    /home/pedro/algo
 	char* final;
 	int i=1, niveis = conta_niveis_caminho(caminho);
@@ -347,7 +347,30 @@ char* nome_final(char* caminho)
 	return NULL;
 }
 
-BOOL procura_descritor_num_diretorio(int qtde_blocos, char* nome, DWORD bloco, DWORD* offset)
+char* subcaminho(char* caminho, int j) //OK
+{
+	int i=1, k=0;
+	char* buffer = (char*)malloc(39);
+
+	while(k<j)
+	{
+		if(caminho[i]=='/')
+			k++;;
+		i++;
+	}
+	k=0;
+	while(caminho[i]!='/')
+	{
+		buffer[k]=caminho[i];
+		i++;
+		k++;
+	}
+	buffer[k]='\0';
+	return buffer;
+}
+
+
+struct t2fs_record* procura_descritor_num_diretorio(int qtde_blocos, char* nome, DWORD bloco, DWORD* offset)
 {
 	int i,j, arquivos_por_bloco = tamanho_bloco / TAM_REG;
 	char* buffer;
@@ -359,43 +382,59 @@ BOOL procura_descritor_num_diretorio(int qtde_blocos, char* nome, DWORD bloco, D
 			buffer = le_bloco(bloco+j);
 			for(i=0;i<arquivos_por_bloco;i++)
 			{
+				//printf("NOME: %s\n", nome);
 				descritor = le_t2fs_record(buffer + i*TAM_REG);
 				if(strcmp(descritor->name,nome)==0)
-					return TRUE;
+					return descritor;
 				(*offset) += 1;
 			}
 		}
 	}
-	return FALSE;
+	return NULL;
 }
 
-int procura_descritores(DWORD bloco, int niveis, char* caminho, char* final)//Assume que recebe níveis válido. TO NESSA
-{
-	int i, arquivos_por_bloco = tamanho_bloco / TAM_REG;
-	char* buffer = le_bloco(bloco);
-	struct t2fs_record* descritor = (struct t2fs_record*)malloc(sizeof(struct t2fs_record)); 
-	/*
-	if(niveis==1)
-	{
-		for(i=0;i<arquivos_por_bloco;i++)
-		{
-			descritor = le_t2fs_record(buffer + i*TAM_REG);
-			if(strcmp(descritor->name,final)==0)
-				return 1;
-		}
-		else return 0;
-	}*/
-	return 1 ;
 
+//Acho que ta ok
+int procura_descritores(DWORD bloco, int niveis, char* caminho, char* final, struct t2fs_record* descritor)//Assume que recebe níveis válido. TO NESSA
+{
+	int i;
+	DWORD* ptr = (DWORD*)malloc(sizeof(DWORD)); // Sugestão no Nicolas, ainda não usei
+
+	/*Vai ser uma busca para cada nível no caminho (e.g. /home/pedro/dir tem 3 níveis, logo serão 3 iterações no for)
+	Até a penúltima busca, se houver algum erro é porque o caminho passado é inválido, então retorna -1;
+	Quando chegar na última busca (quando cai no else) o resultado não pode mais ser caminho inválido: ou 
+	o arquivo está lá ou não está. Se não estiver, retorna 0 (significa que há 0 arquivos com esse nome nesse caminho).
+	Senão, o for termina e o retorno é 1 (significando que há 1 arquivo com esse nome nesse caminho)*/
+	for(i=0;i<niveis;i++)
+	{
+		if(i<niveis-1)
+		{
+			//e.g. se o caminho for /home/pedro/dir, e i=1, ele procurará a pasta 'pedro'
+			descritor=procura_descritor_num_diretorio(descritor->blocksFileSize, subcaminho(caminho,i), descritor->dataPtr[0], ptr);
+			if(descritor==NULL)
+				return -1;
+		}
+		else
+		{
+			descritor=procura_descritor_num_diretorio(descritor->blocksFileSize, final, descritor->dataPtr[0], ptr);
+			if(descritor==NULL)
+			{
+				return 0;
+			} 
+		} 
+	}
+	return 1;
 }
 
 int caminho_valido(char* caminho)
 {
-	struct t2fs_record raiz = get_registro_raiz();
 	int niveis;
-	niveis = conta_niveis_caminho(caminho);
+	struct t2fs_record raiz = get_registro_raiz();
+	struct t2fs_record* descritor = (struct t2fs_record*)malloc(sizeof(struct t2fs_record)); 
+	descritor=&raiz;
 	
+	niveis = conta_niveis_caminho(caminho);
 	if(niveis==-1) // Testa se o caminho está mal formatado
 		return -1;
-	return procura_descritores(raiz.dataPtr[0],niveis,caminho,nome_final(caminho));
+	return procura_descritores(raiz.dataPtr[0],niveis,caminho,nome_final(caminho),descritor);
 }
