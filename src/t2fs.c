@@ -19,7 +19,7 @@ t2fs_file t2fs_create (char *nome)
 	printBloco(2); // Recebe como parâmetro o bloco a ser printado.
 	//printf("%d\n", caminho_valido("/teste1"));
 	//printf("Bloco livre: %i\n", achablocolivre());
-
+	printf("%d\n", caminho_valido("/dir1"));
 
 	printf("Bloco livre: %i\n", achablocolivre());
 
