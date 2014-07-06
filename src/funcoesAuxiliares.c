@@ -211,7 +211,7 @@ int achablocolivre()
 	
 	ret = achabit(buffer, &counter);	
 	
-	if(ret == 1)
+	if(ret == 1 && counter < superbloco->DiskSize)
 		return counter;
 
 //mesmo que esse sistema tenha no máximo 1024 os outros bitmaps estão sendo feitos para deixar genético
