@@ -16,7 +16,7 @@ void printSetor(char* buffer, int inicio, int fim) //Estou chamando essa funçã
 {
 	int i;
 	for(i=inicio;i<fim;i++){
-		printf("%c ", buffer[i]);
+		printf("%c ", buffer[i]); 
 	}
 	printf("\nFim setor\n");
 }
@@ -29,8 +29,12 @@ char* le_bloco(int numero_bloco)
 	if(tamanho_bloco==0)	//Caso esta variável global ainda não tenha sido atualizada pela função leSuperBloco
 		return NULL;
 
-	/*Sobre os índices do for: começa lendo em numero_bloco*numero_setores porque um bloco possui um ou mais setores. Por exemplo,no caso de um bloco possuir 4 setores, e quisermos ler o 2° bloco (bloco 1), precisamos começar a ler a partir do quinto setor (setor 4). Neste caso, teremos que ler ATÉ o oitavo setor (setor 7), que é dado por numero_bloco*numero_setores+numero_setores (neste caso, 1*4+4 = 8, então ele lê até o 7)*/
-	for(i=numero_bloco*numero_setores;i<numero_bloco*numero_setores+numero_setores;i++)
+	/*Sobre os índices do for: começa lendo em numero_bloco*numero_setores porque um bloco possui um ou mais setores. 
+	Por exemplo,no caso de um bloco possuir 4 setores, e quisermos ler o 2° bloco (bloco 1), precisamos começar a ler a 
+	partir do quinto setor (setor 4). Neste caso, teremos que ler ATÉ o oitavo setor (setor 7), que é dado por 
+	numero_bloco*numero_setores+numero_setores (neste caso, 1*4+4 = 8, então ele lê até o 7)
+	Por que o +1: o superbloco não conta*/
+	for(i=numero_bloco*numero_setores+1;i<numero_bloco*numero_setores+numero_setores+1;i++)
 	{
 		if(read_sector(i,buffer+offset)!=0) // Armazena os bytes dos primeiros setores nas primeiras posições do buffer
 			return NULL;
@@ -57,12 +61,17 @@ BOOL escreve_bloco(char* bloco, int numero_bloco)
 		--setores_serem_escritos;
 
 	for(i=0; i <= setores_serem_escritos; i++){
-		setor_alvo = numero_bloco*numero_setores;		
+		setor_alvo = numero_bloco*numero_setores+1;		
 		if(write_sector(setor_alvo, bloco+i*TAM_SETOR)!=0){
 				return FALSE;
 		}
 	}
 	return TRUE;
+}
+
+BOOL escreve_superbloco(char* dados)
+{
+
 }
 
 struct t2fs_superbloco* leSuperBloco(void) 
@@ -122,7 +131,10 @@ struct t2fs_superbloco* leSuperBloco(void)
 		superbloco->RootDirReg.dataPtr[1] = (BYTE) buffer[247]<<24 | (BYTE) buffer[246]<<16 | (BYTE) buffer[245]<<8 | (BYTE) buffer[244];
 		superbloco->RootDirReg.singleIndPtr = (BYTE) buffer[251]<<24 | (BYTE) buffer[250]<<16 | (BYTE) buffer[249]<<8 | (BYTE) buffer[248];
 		superbloco->RootDirReg.doubleIndPtr = (BYTE) buffer[255]<<24 | (BYTE) buffer[254]<<16 | (BYTE) buffer[253]<<8 | (BYTE) buffer[252];
-	
+		printf("Nome do arquivo raiz: %s\n", superbloco->RootDirReg.name);
+		printf("Endereco dele: %d\n", superbloco->RootDirReg.dataPtr[0]);
+		printf("Nro blocos dele: %d\n", superbloco->RootDirReg.blocksFileSize);
+		printf("Nro bytes dele: %d\n", superbloco->RootDirReg.bytesFileSize);
 		tamanho_bloco = superbloco->BlockSize;
 		return superbloco;
 	}
@@ -226,4 +238,19 @@ int achablocolivre()
 				return counter;
 		}
 return -1;
+}
+
+int conta_niveis_caminho(char* caminho)
+{
+	char* buffer = (char*) malloc(38); // Um nome tem até 39 caracteres, mas como um caminho sempre começa com '/' pus 38
+	int i=0, niveis=1;
+	if (caminho!=NULL && caminho[0]=='/')
+	{
+		while(caminho[i+1]='/')
+		{
+			buffer[i]=caminho[i];
+		}
+		
+	}
+	else return 0;
 }

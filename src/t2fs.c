@@ -15,7 +15,7 @@ t2fs_file t2fs_create (char *nome)
 	//printf("Ponteiro direto para bloco de dados do bitmap: %lX\n", bloco.dataPtr[0]);
 
 	init();
-	printBloco(3); // Recebe como parâmetro o bloco a ser printado
+	printBloco(1); // Recebe como parâmetro o bloco a ser printado.
 	//printf("Bloco livre: %i\n", achablocolivre());
 
 
