@@ -6,6 +6,21 @@
 
 WORD tamanho_bloco=0;
 
+void printBloco(int bloco)
+{
+	printf("\nLENDO BLOCO %d:\n", bloco);
+	le_bloco(bloco);
+}
+
+void printSetor(char* buffer, int inicio, int fim) //Estou chamando essa função na le_bloco, para printar o que é lido
+{
+	int i;
+	for(i=inicio;i<fim;i++){
+		printf("%c ", buffer[i]);
+	}
+	printf("\nFim setor\n");
+}
+
 char* le_bloco(int numero_bloco)
 {
 	char* buffer = (char*) malloc(tamanho_bloco);
@@ -19,6 +34,7 @@ char* le_bloco(int numero_bloco)
 	{
 		if(read_sector(i,buffer+offset)!=0) // Armazena os bytes dos primeiros setores nas primeiras posições do buffer
 			return NULL;
+		printSetor(buffer,offset,offset+TAM_SETOR);
 		offset+=TAM_SETOR;
 	}
 	return buffer;
@@ -26,25 +42,30 @@ char* le_bloco(int numero_bloco)
 
 BOOL escreve_bloco(char* bloco, int numero_bloco)
 {
-	int numero_setores = tamanho_bloco / TAM_SETOR, setores_serem_escritos, setor_lido, i;
+	int numero_setores = tamanho_bloco / TAM_SETOR, setores_serem_escritos, setor_alvo, i;
 	
+	//Verifica integridades de variáveis e dados a serem escritos
 	if(strlen(bloco) > tamanho_bloco || tamanho_bloco==0)
 		return FALSE;
 
+	/*Calcula quantos setores precisarão ser escritos. Sobre o if: ele subtrai 1 caso o número de setores 
+	seja divisível pelo tamanho de um setor em bytes para evitar casos do tipo: 
+	256 bytes a serem escritos vai em um byte. 256/256 tem resto 0. Logo, resultado será 1,e no for ele iria escrever
+	em dois setores*/
 	setores_serem_escritos = (int) strlen(bloco) / TAM_SETOR;
 	if(strlen(bloco) % TAM_SETOR ==0)
 		--setores_serem_escritos;
 
 	for(i=0; i <= setores_serem_escritos; i++){
-		setor_lido = numero_bloco*numero_setores;		
-		if(write_sector(setor_lido,bloco+i*TAM_SETOR)!=0){
+		setor_alvo = numero_bloco*numero_setores;		
+		if(write_sector(setor_alvo, bloco+i*TAM_SETOR)!=0){
 				return FALSE;
 		}
 	}
 	return TRUE;
 }
 
-struct t2fs_superbloco* leSuperBloco(void) //FUNCIONANDO
+struct t2fs_superbloco* leSuperBloco(void) 
 {
 	struct t2fs_superbloco* superbloco = (struct t2fs_superbloco*)malloc(sizeof(struct t2fs_superbloco));
 	char* buffer = (char*) malloc(TAM_SETOR);
@@ -122,42 +143,33 @@ void init(void)
 	//c = (unsigned char)(1<<7)|(unsigned char)(1<<7);
 
 	superbloco = leSuperBloco();
-	escreve_bloco(&c, superbloco->BitMapReg.dataPtr[0]);
-	
+	escreve_bloco(&c, superbloco->BitMapReg.dataPtr[0]);	
 }
+
 //se retorna número do bloco se não achou retorna -1
 int achabit(char *buffer,int *counter)
 {
-
-unsigned char aux;
-	
-
+unsigned char aux;	
 unsigned char comparador = (char)(1<<7);
 int i, j;
+
 	for(i = 0; i < tamanho_bloco ; i++)
 	{
 		aux = buffer[i];
 		comparador = (char)128;
 		for(j = 0 ; j < 8 ; j++)
 		{
-
 			if(((int)aux & (int)comparador) == 0)
 			{
-
 				return 1;
-
 			}else
 				{
 				printf("\n%i", (int)comparador);
 				comparador=comparador>>(unsigned char)1;
 				(*counter)++;
 				}
-		}
-		
-		
+		}	
 	}
-
-
 return 0;
 }
 
@@ -166,7 +178,6 @@ int achablocolivre()
 {
 	int counter = 0, ret = 0, i, j;
 	char *buffer, *buffer2;
-	
 	//direto 1
 	buffer = le_bloco(superbloco->BitMapReg.dataPtr[0]);
 	printf("Buffer:\n%i\n", (int)buffer[0]);
@@ -185,7 +196,6 @@ int achablocolivre()
 	if(ret == 1)
 		return counter;
 
-
 	//indireção simples
 	long int end;
 	buffer = le_bloco(superbloco->BitMapReg.singleIndPtr);
@@ -198,9 +208,7 @@ int achablocolivre()
 
 			if(ret== 1)
 				return counter;
-
 		}
-
 
 	//indireção dupla
 	buffer2 = le_bloco(superbloco->BitMapReg.doubleIndPtr);
@@ -216,12 +224,6 @@ int achablocolivre()
 
 			if(ret == 1)
 				return counter;
-
 		}
-
-
-
 return -1;
 }
-
-

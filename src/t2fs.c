@@ -6,7 +6,7 @@
 
 char *t2fs_identify (void)
 {
-	return "Bruno Pinto Silva - 217446 \nPedro Henrique Arruda Faustini - 217432\nWilliam Weber Berruti - 205693\n\0";
+	return "Bruno Pinto Silva - 217446 \nPedro Henrique Arruda Faustini - 217432\n\0";
 }
 
 t2fs_file t2fs_create (char *nome)
@@ -15,7 +15,8 @@ t2fs_file t2fs_create (char *nome)
 	//printf("Ponteiro direto para bloco de dados do bitmap: %lX\n", bloco.dataPtr[0]);
 
 	init();
-	printf("Bloco livre: %i\n", achablocolivre());
+	printBloco(3); // Recebe como parâmetro o bloco a ser printado
+	//printf("Bloco livre: %i\n", achablocolivre());
 
 
 
