@@ -126,10 +126,10 @@ struct t2fs_superbloco* leSuperBloco(void)
 		superbloco->RootDirReg.dataPtr[1] = (BYTE) buffer[247]<<24 | (BYTE) buffer[246]<<16 | (BYTE) buffer[245]<<8 | (BYTE) buffer[244];
 		superbloco->RootDirReg.singleIndPtr = (BYTE) buffer[251]<<24 | (BYTE) buffer[250]<<16 | (BYTE) buffer[249]<<8 | (BYTE) buffer[248];
 		superbloco->RootDirReg.doubleIndPtr = (BYTE) buffer[255]<<24 | (BYTE) buffer[254]<<16 | (BYTE) buffer[253]<<8 | (BYTE) buffer[252];
-		printf("Nome do arquivo raiz: %s\n", superbloco->RootDirReg.name);
+		/*printf("Nome do arquivo raiz: %s\n", superbloco->RootDirReg.name);
 		printf("Endereco dele: %d\n", superbloco->RootDirReg.dataPtr[0]);
 		printf("Nro blocos dele: %d\n", superbloco->RootDirReg.blocksFileSize);
-		printf("Nro bytes dele: %d\n", superbloco->RootDirReg.bytesFileSize);
+		printf("Nro bytes dele: %d\n", superbloco->RootDirReg.bytesFileSize);*/
 		tamanho_bloco = superbloco->BlockSize;
 		return superbloco;
 	}
@@ -140,6 +140,25 @@ struct t2fs_record get_registro_bitmap()
 {
 	//struct t2fs_superbloco* superbloco = leSuperBloco();
 	return superbloco->BitMapReg;
+}
+
+struct t2fs_record get_registro_raiz()
+{
+	return superbloco->RootDirReg;
+}
+
+struct t2fs_record* le_t2fs_record(char* buffer)
+{
+	struct t2fs_record* registro = (struct t2fs_record*)malloc(sizeof(struct t2fs_record));
+	registro->TypeVal = buffer[0];
+	memcpy(registro->name,buffer+1,39);
+	registro->blocksFileSize = (BYTE) buffer[43]<<24 | (BYTE) buffer[42]<<16 | (BYTE) buffer[41]<<8 | (BYTE) buffer[40];
+	registro->bytesFileSize = (BYTE) buffer[47]<<24 | (BYTE) buffer[46]<<16 | (BYTE) buffer[45]<<8 | (BYTE) buffer[44];
+	registro->dataPtr[0] = (BYTE) buffer[51]<<24 | (BYTE) buffer[50]<<16 | (BYTE) buffer[49]<<8 | (BYTE) buffer[48];
+	registro->dataPtr[1] = (BYTE) buffer[55]<<24 | (BYTE) buffer[54]<<16 | (BYTE) buffer[53]<<8 | (BYTE) buffer[52];
+	registro->singleIndPtr = (BYTE) buffer[59]<<24 | (BYTE) buffer[58]<<16 | (BYTE) buffer[57]<<8 | (BYTE) buffer[56];
+	registro->doubleIndPtr = (BYTE) buffer[63]<<24 | (BYTE) buffer[62]<<16 | (BYTE) buffer[61]<<8 | (BYTE) buffer[60];
+	return registro;
 }
 
 
@@ -235,6 +254,10 @@ int achablocolivre()
 return -1;
 }
 
+
+
+// FUNÇÕES PARA ACHAR UM ARQUIVO A PARTIR DE UM CAMINHO
+
 int conta_niveis_caminho(char* caminho)
 {
 	int i=1, niveis=0;
@@ -251,14 +274,78 @@ int conta_niveis_caminho(char* caminho)
 	return -1;
 }
 
+char* nome_final(char* caminho)
+{	//    /home/pedro/algo
+	char* final;
+	int i=1, niveis = conta_niveis_caminho(caminho);
+
+	if(niveis!=-1)
+	{
+		while(niveis >= 1 && caminho[i]!='\0')
+		{
+			if(caminho[i-1]=='/')
+			{
+				niveis--;
+			}
+			i++;
+		}
+		i--;
+		final = (char*)malloc((strlen(caminho+i)));
+		strcpy(final,caminho+i);
+		return final;
+	}
+	return NULL;
+}
+
+BOOL procura_descritor_num_diretorio(int qtde_blocos, char* nome, DWORD bloco, DWORD* offset)
+{
+	int i,j, arquivos_por_bloco = tamanho_bloco / TAM_REG;
+	char* buffer;
+	struct t2fs_record* descritor = (struct t2fs_record*)malloc(sizeof(struct t2fs_record)); 
+	*offset=0;
+
+	if(nome!=NULL){
+		for(j=0;j<qtde_blocos;j++){
+			buffer = le_bloco(bloco+j);
+			for(i=0;i<arquivos_por_bloco;i++)
+			{
+				descritor = le_t2fs_record(buffer + i*TAM_REG);
+				if(strcmp(descritor->name,nome)==0)
+					return TRUE;
+				(*offset) += 1;
+			}
+		}
+	}
+	return FALSE;
+}
+
+int procura_descritores(DWORD bloco, int niveis, char* caminho, char* final)//Assume que recebe níveis válido. TO NESSA
+{
+	int i, arquivos_por_bloco = tamanho_bloco / TAM_REG;
+	char* buffer = le_bloco(bloco);
+	struct t2fs_record* descritor = (struct t2fs_record*)malloc(sizeof(struct t2fs_record)); 
+	/*
+	if(niveis==1)
+	{
+		for(i=0;i<arquivos_por_bloco;i++)
+		{
+			descritor = le_t2fs_record(buffer + i*TAM_REG);
+			if(strcmp(descritor->name,final)==0)
+				return 1;
+		}
+		else return 0;
+	}*/
+	return 1 ;
+
+}
+
 int caminho_valido(char* caminho)
 {
+	struct t2fs_record raiz = get_registro_raiz();
 	int niveis;
-
 	niveis = conta_niveis_caminho(caminho);
 	
 	if(niveis==-1) // Testa se o caminho está mal formatado
 		return -1;
-
-	return 1; //NÃOA CABEI ESSA FUNCAO
+	return procura_descritores(raiz.dataPtr[0],niveis,caminho,nome_final(caminho));
 }
