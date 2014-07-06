@@ -38,7 +38,7 @@ char* le_bloco(int numero_bloco)
 	{
 		if(read_sector(i,buffer+offset)!=0) // Armazena os bytes dos primeiros setores nas primeiras posições do buffer
 			return NULL;
-		printSetor(buffer,offset,offset+TAM_SETOR);
+		//printSetor(buffer,offset,offset+TAM_SETOR);
 		offset+=TAM_SETOR;
 	}
 	return buffer;
@@ -147,6 +147,16 @@ struct t2fs_record get_registro_raiz()
 	return superbloco->RootDirReg;
 }
 
+void imprime(unsigned char comp)//auxiliar para auxiliares- apagar depois
+{
+	int i  = 0;
+	int v[8];
+
+struct t2fs_record get_registro_raiz()
+{
+	return superbloco->RootDirReg;
+}
+
 struct t2fs_record* le_t2fs_record(char* buffer)
 {
 	struct t2fs_record* registro = (struct t2fs_record*)malloc(sizeof(struct t2fs_record));
@@ -161,40 +171,57 @@ struct t2fs_record* le_t2fs_record(char* buffer)
 	return registro;
 }
 
+	for(;i<8;i++)
+	{
+		v[7-i] = (int)comp%2;
+		comp = (int)comp/2;	
+	}
+	for(i = 0;i<8;i++)
+	{
+		printf("%i", v[i]);
+	}
+}
 
 void init(void)
 {
-	char c = 0;
-	//int test = -2;
-	//c = (unsigned char)(1<<7)|(unsigned char)(1<<7);
 
 	superbloco = leSuperBloco();
-	escreve_bloco(&c, superbloco->BitMapReg.dataPtr[0]);	
+	
 }
+
+
 
 //se retorna número do bloco se não achou retorna -1
 int achabit(char *buffer,int *counter)
 {
-unsigned char aux;	
+
+unsigned char aux;
+
 unsigned char comparador = (char)(1<<7);
+
 int i, j;
 
-	for(i = 0; i < tamanho_bloco ; i++)
+	for(i = 0; i < tamanho_bloco && *counter < superbloco->NofBlocks; i++)
 	{
+
+
 		aux = buffer[i];
-		comparador = (char)128;
-		for(j = 0 ; j < 8 ; j++)
+		comparador = (char)(1<<7);
+		for(j = 0 ; j < 8 && *counter < superbloco->NofBlocks; j++)
 		{
-			if(((int)aux & (int)comparador) == 0)
+		
+			if(((unsigned char)aux & (unsigned char)comparador) == 0)
 			{
+
+				buffer[i] = (unsigned char)aux | (unsigned char)comparador;
+				escreve_bloco(buffer, superbloco->BitMapReg.dataPtr[0]);
 				return 1;
 			}else
 				{
-				printf("\n%i", (int)comparador);
 				comparador=comparador>>(unsigned char)1;
 				(*counter)++;
 				}
-		}	
+		}
 	}
 return 0;
 }
@@ -205,25 +232,27 @@ int achablocolivre()
 	int counter = 0, ret = 0, i, j;
 	char *buffer, *buffer2;
 	//direto 1
-	buffer = le_bloco(superbloco->BitMapReg.dataPtr[0]);
-	printf("Buffer:\n%i\n", (int)buffer[0]);
-	printf("%i\n", (int)buffer[1]);
-	printf("%i\n", (int)buffer[2]);
-	printf("%i\n", (int)buffer[3]);
+	 buffer = le_bloco(superbloco->BitMapReg.dataPtr[0]);
+	
 	ret = achabit(buffer, &counter);	
 	
-	if(ret == 1)
+	if(ret == 1 && counter < superbloco->DiskSize)
 		return counter;
 
-	//direto 2
+//mesmo que esse sistema tenha no máximo 1024 os outros bitmaps estão sendo feitos para deixar genético
+if(superbloco->NofBlocks >= (8*superbloco->BlockSize))	//direto 2
+{
 	buffer = le_bloco(superbloco->BitMapReg.dataPtr[1]);
 	ret = achabit(buffer, &counter);	
 
 	if(ret == 1)
 		return counter;
+}
 
-	//indireção simples
-	long int end;
+long int end;
+if(superbloco->NofBlocks >= (8*superbloco->BlockSize*2))	//indireção simples
+{
+	
 	buffer = le_bloco(superbloco->BitMapReg.singleIndPtr);
 		//cada 4 posições formam um endereço de bloco
 		for(i = 0; i<(tamanho_bloco/4);i+=4)
@@ -234,9 +263,12 @@ int achablocolivre()
 
 			if(ret== 1)
 				return counter;
+
 		}
 
-	//indireção dupla
+}
+if(superbloco->NofBlocks >= (8*superbloco->BlockSize*2 + 8*superbloco->BlockSize*superbloco->BlockSize/4))	//indireção dupla
+{
 	buffer2 = le_bloco(superbloco->BitMapReg.doubleIndPtr);
 	for(j = 0; j<(tamanho_bloco/4);j+=4)
 		
@@ -250,10 +282,28 @@ int achablocolivre()
 
 			if(ret == 1)
 				return counter;
+
 		}
+}
+
+
 return -1;
 }
 
+
+struct t2fs_record* le_t2fs_record(char* buffer)
+{
+	struct t2fs_record* registro = (struct t2fs_record*)malloc(sizeof(struct t2fs_record));
+	registro->TypeVal = buffer[0];
+	memcpy(registro->name,buffer+1,39);
+	registro->blocksFileSize = (BYTE) buffer[43]<<24 | (BYTE) buffer[42]<<16 | (BYTE) buffer[41]<<8 | (BYTE) buffer[40];
+	registro->bytesFileSize = (BYTE) buffer[47]<<24 | (BYTE) buffer[46]<<16 | (BYTE) buffer[45]<<8 | (BYTE) buffer[44];
+	registro->dataPtr[0] = (BYTE) buffer[51]<<24 | (BYTE) buffer[50]<<16 | (BYTE) buffer[49]<<8 | (BYTE) buffer[48];
+	registro->dataPtr[1] = (BYTE) buffer[55]<<24 | (BYTE) buffer[54]<<16 | (BYTE) buffer[53]<<8 | (BYTE) buffer[52];
+	registro->singleIndPtr = (BYTE) buffer[59]<<24 | (BYTE) buffer[58]<<16 | (BYTE) buffer[57]<<8 | (BYTE) buffer[56];
+	registro->doubleIndPtr = (BYTE) buffer[63]<<24 | (BYTE) buffer[62]<<16 | (BYTE) buffer[61]<<8 | (BYTE) buffer[60];
+	return registro;
+}
 
 
 // FUNÇÕES PARA ACHAR UM ARQUIVO A PARTIR DE UM CAMINHO
