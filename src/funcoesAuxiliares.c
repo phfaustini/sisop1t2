@@ -164,18 +164,18 @@ struct t2fs_record* le_t2fs_record(char* buffer)
         registro->doubleIndPtr = (BYTE) buffer[63]<<24 | (BYTE) buffer[62]<<16 | (BYTE) buffer[61]<<8 | (BYTE) buffer[60];
         return registro;
 }
-
+#define tam 8
 void imprime(unsigned char comp)//auxiliar para auxiliares- apagar depois
 {
     int i = 0;
-    int v[8];
+    int v[tam];
 
-    for(; i<8; i++)
+    for(; i<tam; i++)
     {
-        v[7-i] = (int)comp%2;
+        v[tam-1-i] = (int)comp%2;
         comp = (int)comp/2;
     }
-    for(i = 0; i<8; i++)
+    for(i = 0; i<tam; i++)
     {
         printf("%i", v[i]);
     }
@@ -204,7 +204,7 @@ int achabit(char *buffer,int *counter)
     {
 
         aux = buffer[i];
-        comparador = (char)(1<<7);
+        comparador = (char)(1);
         for(j = 0 ; j < 8 && *counter < superbloco->NofBlocks; j++)
         {
 
@@ -217,7 +217,7 @@ int achabit(char *buffer,int *counter)
             }
             else
             {
-                comparador=comparador>>(unsigned char)1;
+                comparador=comparador<<(unsigned char)1;
                 (*counter)++;
             }
         }
@@ -232,6 +232,14 @@ int achablocolivre()
     char *buffer, *buffer2;
 //direto 1
     buffer = le_bloco(superbloco->BitMapReg.dataPtr[0]);
+    for(i = 0 ; i < 8 ; i++)
+    {
+        imprime(buffer[i]);
+        printf("\n");
+    }
+        
+    //imprime(superbloco->BitMapReg.dataPtr[1]);
+    //buffer = le_bloco(superbloco->BitMapReg.dataPtr[0]);
 
     ret = achabit(buffer, &counter);
 

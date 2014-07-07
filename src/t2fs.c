@@ -15,7 +15,7 @@ t2fs_file t2fs_create (char *nome)
 
 	init();
 
-	struct t2fs_record* d = (struct t2fs_record*)malloc(sizeof(struct t2fs_record)); //procura_descritor_num_diretorio("teste1",(DWORD*)malloc(sizeof(DWORD)), superbloco->BitMapReg);
+	/*struct t2fs_record* d = (struct t2fs_record*)malloc(sizeof(struct t2fs_record)); //procura_descritor_num_diretorio("teste1",(DWORD*)malloc(sizeof(DWORD)), superbloco->BitMapReg);
 	printf("%d \n",caminho_valido("/dir1/teste4-dir1"));
 	d = get_descritor_arquivo("/dir1/teste4-dir1");
 	if(d!=NULL)
@@ -23,15 +23,15 @@ t2fs_file t2fs_create (char *nome)
 	//printBloco(1);
 
 	//printf("Bloco livre: %i\n", achablocolivre());
-
+*/
 	DWORD blocolivre = achablocolivre();
 	printf("Bloco livre: %i\n", blocolivre);
-	struct t2fs_record* record = (struct t2fs_record*) malloc(tamanho_bloco);
+	/*struct t2fs_record* record = (struct t2fs_record*) malloc(tamanho_bloco);
 	record = inicializainode(nome);
 	char* buffer = (char*) malloc(tamanho_bloco);
 	buffer = inodeparachar(record);
 	escreve_bloco(buffer, blocolivre);
-
+*/
 
 return 1;
 }
