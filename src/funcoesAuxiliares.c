@@ -394,7 +394,7 @@ struct t2fs_record* procura_descritor_num_bloco_diretorio(char* nome, DWORD bloc
 
 
 
-//Precisa de testes com arquivos que ocupem mais de um bloco
+//Precisa de TESTES com arquivos que ocupem mais de um bloco
 struct t2fs_record* procura_descritor_num_diretorio(char* nome, DWORD* offset, struct t2fs_record* descritor)
 {
 	int i=0;
@@ -475,34 +475,24 @@ int procura_descritores(int niveis, char* caminho, char* final, struct t2fs_reco
 	return 1;
 }
 
-struct t2fs_record* procura_descritores2(int niveis, char* caminho, char* final, struct t2fs_record* descritor)//Assume que recebe níveis válido. TO NESSA
+struct t2fs_record* procura_descritores2(int niveis, char* caminho, char* final, struct t2fs_record* descritor)//Assume que recebe níveis válido.
 {
 	int i;
 	DWORD* ptr = (DWORD*)malloc(sizeof(DWORD)); // Sugestão no Nicolas, ainda não usei
 
-	/*Vai ser uma busca para cada nível no caminho (e.g. /home/pedro/dir tem 3 níveis, logo serão 3 iterações no for)
-	Até a penúltima busca, se houver algum erro é porque o caminho passado é inválido, então retorna -1;
-	Quando chegar na última busca (quando cai no else) o resultado não pode mais ser caminho inválido: ou 
-	o arquivo está lá ou não está. Se não estiver, retorna 0 (significa que há 0 arquivos com esse nome nesse caminho).
-	Senão, o for termina e o retorno é 1 (significando que há 1 arquivo com esse nome nesse caminho)*/
 	for(i=0;i<niveis;i++)
 	{
 		if(i<niveis-1)
 		{
-			//e.g. se o caminho for /home/pedro/dir, e i=1, ele procurará a pasta 'pedro'
-			//Dúvida: dataPtr[1] é usado quando?? 
 			descritor=procura_descritor_num_diretorio(subcaminho(caminho,i), ptr, descritor);
-			if(descritor==NULL){
+			if(descritor==NULL)
 				NULL;
-			}
 		}
 		else
 		{
 			descritor=procura_descritor_num_diretorio(final, ptr, descritor);
 			if(descritor==NULL)
-			{
 				NULL;
-			} 
 		} 
 	}
 	return descritor;
