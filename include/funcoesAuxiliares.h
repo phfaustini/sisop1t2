@@ -22,6 +22,8 @@ char* nome_final(char* final); // Recebe um caminho completo e devolve o final (
 char* subcaminho(char* caminho, int j);
 int conta_niveis_caminho(char* caminho); // /home/pedro/algo tem 3 níves. Se for caminho inválido (e.g. #2crd/teste) retorna -1
 int procura_descritores(int niveis, char* caminho, char* final, struct t2fs_record* descritor);
+struct t2fs_record* get_descritor_arquivo(char* caminho);
+struct t2fs_record* procura_descritores2(int niveis, char* caminho, char* final, struct t2fs_record* descritor);
 int caminho_valido(char* caminho); /* Há três retornos:
 									-1: caminho inválido (char* vazio, não comece com '/', nao tenha algum diretorio do meio)
 									 0: caminho válido, mas o arquivo ao final do caminho não existe no diretório

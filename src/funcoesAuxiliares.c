@@ -38,7 +38,7 @@ char* le_bloco(int numero_bloco)
 	{
 		if(read_sector(i,buffer+offset)!=0) // Armazena os bytes dos primeiros setores nas primeiras posições do buffer
 			return NULL;
-		//printSetor(buffer,offset,offset+TAM_SETOR);
+//		printSetor(buffer,offset,offset+TAM_SETOR);
 		offset+=TAM_SETOR;
 	}
 	return buffer;
@@ -308,7 +308,7 @@ struct t2fs_record* le_t2fs_record(char* buffer)
 
 // FUNÇÕES PARA ACHAR UM ARQUIVO A PARTIR DE UM CAMINHO
 
-int conta_niveis_caminho(char* caminho) //OK
+int conta_niveis_caminho(char* caminho)
 {
 	int i=1, niveis=0;
 	if (caminho!=NULL && caminho[0]=='/')
@@ -324,7 +324,7 @@ int conta_niveis_caminho(char* caminho) //OK
 	return -1;
 }
 
-char* nome_final(char* caminho) //OK
+char* nome_final(char* caminho)
 {	//    /home/pedro/algo
 	char* final;
 	int i=1, niveis = conta_niveis_caminho(caminho);
@@ -347,7 +347,7 @@ char* nome_final(char* caminho) //OK
 	return NULL;
 }
 
-char* subcaminho(char* caminho, int j) //OK
+char* subcaminho(char* caminho, int j)
 {
 	int i=1, k=0;
 	char* buffer = (char*)malloc(39);
@@ -382,7 +382,9 @@ struct t2fs_record* procura_descritor_num_bloco_diretorio(char* nome, DWORD bloc
 		{
 			descritor = le_t2fs_record(buffer + i*TAM_REG);//Ta errado. Nem sempre os blocos de um diretório são contíguos
 			if(strcmp(descritor->name,nome)==0)
+			{
 				return descritor;
+			}
 		}
 		return NULL;
 	}
@@ -390,18 +392,24 @@ struct t2fs_record* procura_descritor_num_bloco_diretorio(char* nome, DWORD bloc
 }
 
 
+
+
+//Precisa de testes com arquivos que ocupem mais de um bloco
 struct t2fs_record* procura_descritor_num_diretorio(char* nome, DWORD* offset, struct t2fs_record* descritor)
 {
-	int i;
+	int i=0;
 	struct t2fs_record* descr = (struct t2fs_record*)malloc(sizeof(struct t2fs_record));
-	
+	char* buffer;
+	long int end;
+
 	if(nome!=NULL)
 	{
 		if(descritor->blocksFileSize==1)
 		{
 			descr=procura_descritor_num_bloco_diretorio(nome, descritor->dataPtr[0]);
-			if(descr!=NULL)
+			if(descr!=NULL){
 				return descr;
+			}
 			else return NULL;
 		}
 		else if(descritor->blocksFileSize==2)
@@ -415,17 +423,19 @@ struct t2fs_record* procura_descritor_num_diretorio(char* nome, DWORD* offset, s
 					return descr;
 				else return NULL;
 		}
-		/*for(j=0;j<qtde_blocos;j++){
-			buffer = le_bloco(bloco+j);
-			for(i=0;i<arquivos_por_bloco;i++)
-			{
-				//printf("NOME: %s\n", nome);
-				descritor = le_t2fs_record(buffer + i*TAM_REG);//Ta errado. Nem sempre os blocos de um diretório são contíguos
-				if(strcmp(descritor->name,nome)==0)
-					return descritor;
-				(*offset) += 1;
-			}
-		}*/
+		else if(descritor->blocksFileSize >= (8*descritor->blocksFileSize*2))
+		{
+			buffer = le_bloco(descritor->singleIndPtr);
+			end = buffer[i]<<24 | buffer[i+1]<<16 | buffer[i+2]<<8| buffer[i+3];
+			descr=procura_descritor_num_bloco_diretorio(nome, end);
+
+		}
+		else if(descritor->blocksFileSize >= (8*descritor->blocksFileSize*2 + 8*descritor->blocksFileSize*descritor->blocksFileSize/4))
+		{
+			buffer = le_bloco(descritor->doubleIndPtr);
+			end = buffer[i]<<24 | buffer[i+1]<<16 | buffer[i+2]<<8| buffer[i+3];
+			descr=procura_descritor_num_bloco_diretorio(nome, end);
+		}
 	}
 	return NULL;
 }
@@ -449,8 +459,9 @@ int procura_descritores(int niveis, char* caminho, char* final, struct t2fs_reco
 			//e.g. se o caminho for /home/pedro/dir, e i=1, ele procurará a pasta 'pedro'
 			//Dúvida: dataPtr[1] é usado quando?? 
 			descritor=procura_descritor_num_diretorio(subcaminho(caminho,i), ptr, descritor);
-			if(descritor==NULL)
+			if(descritor==NULL){
 				return -1;
+			}
 		}
 		else
 		{
@@ -464,6 +475,39 @@ int procura_descritores(int niveis, char* caminho, char* final, struct t2fs_reco
 	return 1;
 }
 
+struct t2fs_record* procura_descritores2(int niveis, char* caminho, char* final, struct t2fs_record* descritor)//Assume que recebe níveis válido. TO NESSA
+{
+	int i;
+	DWORD* ptr = (DWORD*)malloc(sizeof(DWORD)); // Sugestão no Nicolas, ainda não usei
+
+	/*Vai ser uma busca para cada nível no caminho (e.g. /home/pedro/dir tem 3 níveis, logo serão 3 iterações no for)
+	Até a penúltima busca, se houver algum erro é porque o caminho passado é inválido, então retorna -1;
+	Quando chegar na última busca (quando cai no else) o resultado não pode mais ser caminho inválido: ou 
+	o arquivo está lá ou não está. Se não estiver, retorna 0 (significa que há 0 arquivos com esse nome nesse caminho).
+	Senão, o for termina e o retorno é 1 (significando que há 1 arquivo com esse nome nesse caminho)*/
+	for(i=0;i<niveis;i++)
+	{
+		if(i<niveis-1)
+		{
+			//e.g. se o caminho for /home/pedro/dir, e i=1, ele procurará a pasta 'pedro'
+			//Dúvida: dataPtr[1] é usado quando?? 
+			descritor=procura_descritor_num_diretorio(subcaminho(caminho,i), ptr, descritor);
+			if(descritor==NULL){
+				NULL;
+			}
+		}
+		else
+		{
+			descritor=procura_descritor_num_diretorio(final, ptr, descritor);
+			if(descritor==NULL)
+			{
+				NULL;
+			} 
+		} 
+	}
+	return descritor;
+}
+
 int caminho_valido(char* caminho)
 {
 	int niveis;
@@ -474,5 +518,21 @@ int caminho_valido(char* caminho)
 	niveis = conta_niveis_caminho(caminho);
 	if(niveis==-1) // Testa se o caminho está mal formatado
 		return -1;
-	return procura_descritores(niveis,caminho,nome_final(caminho),descritor);
+	return  procura_descritores(niveis,caminho,nome_final(caminho),descritor);
+}
+
+struct t2fs_record* get_descritor_arquivo(char* caminho)
+{
+	int niveis;
+	struct t2fs_record raiz = get_registro_raiz();
+	struct t2fs_record* arquivo = (struct t2fs_record*)malloc(sizeof(struct t2fs_record)); 
+	if(caminho_valido(caminho)==1)
+	{
+		niveis = conta_niveis_caminho(caminho);
+		if(niveis==-1) // Testa se o caminho está mal formatado
+			return NULL;
+		arquivo = procura_descritores2(niveis,caminho,nome_final(caminho),&raiz);
+		return arquivo;
+	}
+	else return NULL;
 }
