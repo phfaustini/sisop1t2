@@ -437,29 +437,72 @@ struct registro_bloco* procura_descritor_num_diretorio(char* nome, DWORD* offset
             }
             else return NULL;
         }
+        // INDIREÇÃO SIMPLES. TO PERDIDO
         else if(descritor->registro->blocksFileSize >= (8*descritor->registro->blocksFileSize*2))
         {
-            buffer = le_bloco(descritor->registro->singleIndPtr);
-            end = buffer[i]<<24 | buffer[i+1]<<16 | buffer[i+2]<<8| buffer[i+3];
-            descr=procura_descritor_num_bloco_diretorio(nome, end);
-            if(descr!=NULL){
-                descr->bloco=descritor->registro->singleIndPtr;
+            descr=procura_descritor_num_bloco_diretorio(nome, descritor->registro->dataPtr[0]);
+            if(descr!=NULL)
+            {
+                descr->bloco=descritor->registro->dataPtr[0];
                 return descr;
             }
-            else return NULL;
-
-        }
-        else if(descritor->registro->blocksFileSize >= (8*descritor->registro->blocksFileSize*2 + 8*descritor->registro->blocksFileSize*descritor->registro->blocksFileSize/4))
-        {
-            buffer = le_bloco(descritor->registro->doubleIndPtr);
-            end = buffer[i]<<24 | buffer[i+1]<<16 | buffer[i+2]<<8| buffer[i+3];
-            descr=procura_descritor_num_bloco_diretorio(nome, end);
-            if(descr!=NULL){
-                descr->bloco=descritor->registro->doubleIndPtr;
+            else
+                descr=procura_descritor_num_bloco_diretorio(nome, descritor->registro->dataPtr[1]);
+            if(descr!=NULL)
+            {
+                descr->bloco=descritor->registro->dataPtr[1];
                 return descr;
             }
-            else return NULL;
+            else // A partir daqui procura na indireção simples
+            {
+                buffer = le_bloco(descritor->registro->singleIndPtr);
+               for(i = 0; i<(tamanho_bloco/4); i+=4) //cada 4 posições formam um endereço de bloco
+                {
+                    end = buffer[i]<<24 | buffer[i+1]<<16 | buffer[i+2]<<8| buffer[i+3];
+                    buffer = le_bloco(end);
+                    descr=procura_descritor_num_bloco_diretorio(nome, end);
+                    if(descr!=NULL)
+                    {
+                        descr->bloco = descritor->registro->singleIndPtr;
+                        return descr;
+                    }
+                    else return NULL;
+                }      
+            }
         }
+        else
+                  //INDIREÇÃO DUPLA. TO PERDIDO
+                if(descritor->registro->blocksFileSize >= (8*descritor->registro->blocksFileSize*2 + 8*descritor->registro->blocksFileSize*descritor->registro->blocksFileSize/4))
+                {
+                    descr=procura_descritor_num_bloco_diretorio(nome, descritor->registro->dataPtr[0]);
+                    if(descr!=NULL)
+                    {
+                        descr->bloco=descritor->registro->dataPtr[0];
+                        return descr;
+                    }
+                    else
+                        descr=procura_descritor_num_bloco_diretorio(nome, descritor->registro->dataPtr[1]);
+                    if(descr!=NULL)
+                    {
+                        descr->bloco=descritor->registro->dataPtr[1];
+                        return descr;
+                    }
+                    else
+                        buffer = le_bloco(descritor->registro->singleIndPtr);
+                        for(i = 0; i<(tamanho_bloco/4); i+=4) //cada 4 posições formam um endereço de bloco
+                        {
+                            end = buffer[i]<<24 | buffer[i+1]<<16 | buffer[i+2]<<8| buffer[i+3];
+                            buffer = le_bloco(end);
+                            descr=procura_descritor_num_bloco_diretorio(nome, end);
+                            if(descr!=NULL)
+                            {
+                                descr->bloco = descritor->registro->singleIndPtr;
+                                return descr;
+                            }
+                        }
+                        //aqui ind dupla     
+                        
+                }
     }
     return NULL;
 }

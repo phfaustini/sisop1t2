@@ -12,6 +12,10 @@ struct registro_bloco
 	DWORD bloco;
 };
 
+struct t2fs_superbloco* superbloco;
+WORD tamanho_bloco;
+
+
 void init(void);
 struct t2fs_superbloco* leSuperBloco(void); // Retorna o superbloco, ou NULL caso tenha acontecido alguma falha
 char* le_bloco(int numero_bloco);
@@ -29,24 +33,21 @@ char* subcaminho(char* caminho, int j);
 int conta_niveis_caminho(char* caminho); // /home/pedro/algo tem 3 níves. Se for caminho inválido (e.g. #2crd/teste) retorna -1
 
 
-struct t2fs_record* procura_descritores2(int niveis, char* caminho, char* final, struct registro_bloco* descritor);
+struct t2fs_record* procura_descritores2(int niveis, char* caminho, char* final, struct registro_bloco* descritor);//Retorna descritor
 struct t2fs_record* get_descritor_arquivo(char* caminho);
 
 
-struct registro_bloco* procura_descritor_num_bloco_diretorio(char* nome, DWORD bloco);
+struct registro_bloco* procura_descritor_num_bloco_diretorio(char* nome, DWORD bloco); //Retorna tupla com registro e bloco do registro
 struct registro_bloco* procura_descritor_num_diretorio(char* nome, DWORD* offset, struct registro_bloco* descritor); /*Offset é o deslocamento dentro do
-bloco em bytes para chegar no arquivo.
-Assume que ponteiro já venha alocado*/
-DWORD procura_descritores(int niveis, char* caminho, char* final, struct registro_bloco* descritor);
+																													bloco em bytes para chegar no arquivo.
+																													Assume que ponteiro já venha alocado*/
+
+DWORD procura_descritores(int niveis, char* caminho, char* final, struct registro_bloco* descritor);//Retorna bloco do descritor
 DWORD caminho_valido(char* caminho); /* Há três retornos:
--1: caminho inválido (char* vazio, não comece com '/', nao tenha algum diretorio do meio)
-0: caminho válido, mas o arquivo ao final do caminho não existe no diretório
-outro: bloco onde está o arquivo*/
+									-1: caminho inválido (char* vazio, não comece com '/', nao tenha algum diretorio do meio)
+									 0: caminho válido, mas o arquivo ao final do caminho não existe no diretório
+									 outro: bloco onde está o arquivo*/
 
-struct t2fs_superbloco* superbloco;
-WORD tamanho_bloco;
-
-void init(void);
 int achablocolivre(void);
 int achabit(char*,int*);
 
