@@ -291,19 +291,6 @@ int achablocolivre()
 }
 
 
-struct t2fs_record* le_t2fs_record(char* buffer)
-{
-    struct t2fs_record* registro = (struct t2fs_record*)malloc(sizeof(struct t2fs_record));
-    registro->TypeVal = buffer[0];
-    memcpy(registro->name,buffer+1,39);
-    registro->blocksFileSize = (BYTE) buffer[43]<<24 | (BYTE) buffer[42]<<16 | (BYTE) buffer[41]<<8 | (BYTE) buffer[40];
-    registro->bytesFileSize = (BYTE) buffer[47]<<24 | (BYTE) buffer[46]<<16 | (BYTE) buffer[45]<<8 | (BYTE) buffer[44];
-    registro->dataPtr[0] = (BYTE) buffer[51]<<24 | (BYTE) buffer[50]<<16 | (BYTE) buffer[49]<<8 | (BYTE) buffer[48];
-    registro->dataPtr[1] = (BYTE) buffer[55]<<24 | (BYTE) buffer[54]<<16 | (BYTE) buffer[53]<<8 | (BYTE) buffer[52];
-    registro->singleIndPtr = (BYTE) buffer[59]<<24 | (BYTE) buffer[58]<<16 | (BYTE) buffer[57]<<8 | (BYTE) buffer[56];
-    registro->doubleIndPtr = (BYTE) buffer[63]<<24 | (BYTE) buffer[62]<<16 | (BYTE) buffer[61]<<8 | (BYTE) buffer[60];
-    return registro;
-}
 
 
 // FUNÇÕES PARA ACHAR UM ARQUIVO A PARTIR DE UM CAMINHO
@@ -495,13 +482,13 @@ struct t2fs_record* procura_descritores2(int niveis, char* caminho, char* final,
         {
             descritor=procura_descritor_num_diretorio(subcaminho(caminho,i), ptr, descritor);
             if(descritor==NULL)
-                NULL;
+                return NULL;
         }
         else
         {
             descritor=procura_descritor_num_diretorio(final, ptr, descritor);
             if(descritor==NULL)
-                NULL;
+                return NULL;
         }
     }
     return descritor;
