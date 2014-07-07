@@ -428,6 +428,9 @@ struct t2fs_record* procura_descritor_num_diretorio(char* nome, DWORD* offset, s
 			buffer = le_bloco(descritor->singleIndPtr);
 			end = buffer[i]<<24 | buffer[i+1]<<16 | buffer[i+2]<<8| buffer[i+3];
 			descr=procura_descritor_num_bloco_diretorio(nome, end);
+			if(descr!=NULL)
+					return descr;
+			else return NULL;
 
 		}
 		else if(descritor->blocksFileSize >= (8*descritor->blocksFileSize*2 + 8*descritor->blocksFileSize*descritor->blocksFileSize/4))
@@ -435,6 +438,9 @@ struct t2fs_record* procura_descritor_num_diretorio(char* nome, DWORD* offset, s
 			buffer = le_bloco(descritor->doubleIndPtr);
 			end = buffer[i]<<24 | buffer[i+1]<<16 | buffer[i+2]<<8| buffer[i+3];
 			descr=procura_descritor_num_bloco_diretorio(nome, end);
+			if(descr!=NULL)
+					return descr;
+			else return NULL;
 		}
 	}
 	return NULL;
@@ -442,7 +448,7 @@ struct t2fs_record* procura_descritor_num_diretorio(char* nome, DWORD* offset, s
 
 
 //Acho que ta ok
-int procura_descritores(int niveis, char* caminho, char* final, struct t2fs_record* descritor)//Assume que recebe níveis válido. TO NESSA
+DWORD procura_descritores(int niveis, char* caminho, char* final, struct t2fs_record* descritor)//Assume que recebe níveis válido. TO NESSA
 {
 	int i;
 	DWORD* ptr = (DWORD*)malloc(sizeof(DWORD)); // Sugestão no Nicolas, ainda não usei
@@ -472,7 +478,7 @@ int procura_descritores(int niveis, char* caminho, char* final, struct t2fs_reco
 			} 
 		} 
 	}
-	return 1;
+	return descritor->dataPtr[0];
 }
 
 struct t2fs_record* procura_descritores2(int niveis, char* caminho, char* final, struct t2fs_record* descritor)//Assume que recebe níveis válido.
@@ -498,7 +504,7 @@ struct t2fs_record* procura_descritores2(int niveis, char* caminho, char* final,
 	return descritor;
 }
 
-int caminho_valido(char* caminho)
+DWORD caminho_valido(char* caminho)
 {
 	int niveis;
 	struct t2fs_record raiz = get_registro_raiz();
@@ -516,7 +522,7 @@ struct t2fs_record* get_descritor_arquivo(char* caminho)
 	int niveis;
 	struct t2fs_record raiz = get_registro_raiz();
 	struct t2fs_record* arquivo = (struct t2fs_record*)malloc(sizeof(struct t2fs_record)); 
-	if(caminho_valido(caminho)==1)
+	if(caminho_valido(caminho)>0)
 	{
 		niveis = conta_niveis_caminho(caminho);
 		if(niveis==-1) // Testa se o caminho está mal formatado
