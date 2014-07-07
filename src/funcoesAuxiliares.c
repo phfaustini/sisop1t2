@@ -369,33 +369,70 @@ char* subcaminho(char* caminho, int j) //OK
 	return buffer;
 }
 
-
-struct t2fs_record* procura_descritor_num_diretorio(int qtde_blocos, char* nome, DWORD bloco, DWORD* offset)
+struct t2fs_record* procura_descritor_num_bloco_diretorio(char* nome, DWORD bloco)
 {
-	int i,j, arquivos_por_bloco = tamanho_bloco / TAM_REG;
+	int i, arquivos_por_bloco = tamanho_bloco / TAM_REG;
 	char* buffer;
 	struct t2fs_record* descritor = (struct t2fs_record*)malloc(sizeof(struct t2fs_record)); 
-	*offset=0;
 
-	if(nome!=NULL){
-		for(j=0;j<qtde_blocos;j++){
+	if(nome!=NULL)
+	{
+		buffer = le_bloco(bloco);
+		for(i=0;i<arquivos_por_bloco;i++)
+		{
+			descritor = le_t2fs_record(buffer + i*TAM_REG);//Ta errado. Nem sempre os blocos de um diretório são contíguos
+			if(strcmp(descritor->name,nome)==0)
+				return descritor;
+		}
+		return NULL;
+	}
+	return NULL;
+}
+
+
+struct t2fs_record* procura_descritor_num_diretorio(char* nome, DWORD* offset, struct t2fs_record* descritor)
+{
+	int i;
+	struct t2fs_record* descr = (struct t2fs_record*)malloc(sizeof(struct t2fs_record));
+	
+	if(nome!=NULL)
+	{
+		if(descritor->blocksFileSize==1)
+		{
+			descr=procura_descritor_num_bloco_diretorio(nome, descritor->dataPtr[0]);
+			if(descr!=NULL)
+				return descr;
+			else return NULL;
+		}
+		else if(descritor->blocksFileSize==2)
+		{
+			descr=procura_descritor_num_bloco_diretorio(nome, descritor->dataPtr[0]);
+			if(descr!=NULL)
+				return descr;
+			else
+				descr=procura_descritor_num_bloco_diretorio(nome, descritor->dataPtr[1]);
+				if(descr!=NULL)
+					return descr;
+				else return NULL;
+		}
+		/*for(j=0;j<qtde_blocos;j++){
 			buffer = le_bloco(bloco+j);
 			for(i=0;i<arquivos_por_bloco;i++)
 			{
 				//printf("NOME: %s\n", nome);
-				descritor = le_t2fs_record(buffer + i*TAM_REG);
+				descritor = le_t2fs_record(buffer + i*TAM_REG);//Ta errado. Nem sempre os blocos de um diretório são contíguos
 				if(strcmp(descritor->name,nome)==0)
 					return descritor;
 				(*offset) += 1;
 			}
-		}
+		}*/
 	}
 	return NULL;
 }
 
 
 //Acho que ta ok
-int procura_descritores(DWORD bloco, int niveis, char* caminho, char* final, struct t2fs_record* descritor)//Assume que recebe níveis válido. TO NESSA
+int procura_descritores(int niveis, char* caminho, char* final, struct t2fs_record* descritor)//Assume que recebe níveis válido. TO NESSA
 {
 	int i;
 	DWORD* ptr = (DWORD*)malloc(sizeof(DWORD)); // Sugestão no Nicolas, ainda não usei
@@ -410,13 +447,14 @@ int procura_descritores(DWORD bloco, int niveis, char* caminho, char* final, str
 		if(i<niveis-1)
 		{
 			//e.g. se o caminho for /home/pedro/dir, e i=1, ele procurará a pasta 'pedro'
-			descritor=procura_descritor_num_diretorio(descritor->blocksFileSize, subcaminho(caminho,i), descritor->dataPtr[0], ptr);
+			//Dúvida: dataPtr[1] é usado quando?? 
+			descritor=procura_descritor_num_diretorio(subcaminho(caminho,i), ptr, descritor);
 			if(descritor==NULL)
 				return -1;
 		}
 		else
 		{
-			descritor=procura_descritor_num_diretorio(descritor->blocksFileSize, final, descritor->dataPtr[0], ptr);
+			descritor=procura_descritor_num_diretorio(final, ptr, descritor);
 			if(descritor==NULL)
 			{
 				return 0;
@@ -436,5 +474,5 @@ int caminho_valido(char* caminho)
 	niveis = conta_niveis_caminho(caminho);
 	if(niveis==-1) // Testa se o caminho está mal formatado
 		return -1;
-	return procura_descritores(raiz.dataPtr[0],niveis,caminho,nome_final(caminho),descritor);
+	return procura_descritores(niveis,caminho,nome_final(caminho),descritor);
 }

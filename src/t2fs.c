@@ -20,8 +20,8 @@ t2fs_file t2fs_create (char *nome)
 	//printf("%d\n", caminho_valido("/teste1"));
 	//printf("Bloco livre: %i\n", achablocolivre());
 	
-	struct t2fs_record* d = procura_descritor_num_diretorio(1, "teste1", 1, (DWORD*)malloc(sizeof(DWORD)));
-	printf("%d\n",caminho_valido("/di1/algo"));
+	//struct t2fs_record* d = procura_descritor_num_diretorio("teste1",(DWORD*)malloc(sizeof(DWORD)), superbloco->BitMapReg);
+	printf("%d\n",caminho_valido("/dir1/teste4-dir1"));
 
 	//printf("Bloco livre: %i\n", achablocolivre());
 
