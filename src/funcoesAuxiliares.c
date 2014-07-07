@@ -39,7 +39,7 @@ char* le_bloco(int numero_bloco)
     {
         if(read_sector(i,buffer+offset)!=0) // Armazena os bytes dos primeiros setores nas primeiras posições do buffer
             return NULL;
-        // printSetor(buffer,offset,offset+TAM_SETOR);
+        //printSetor(buffer,offset,offset+TAM_SETOR);
         offset+=TAM_SETOR;
     }
     return buffer;
