@@ -20,7 +20,22 @@ int caminho_valido(char* caminho); /* Há três retornos:
 struct t2fs_superbloco* superbloco;
 WORD tamanho_bloco;
 
+typedef struct aberto
+{
+	DWORD handle;
+	int currentpointer;
+
+}ARQUIVOABERTO;
+
+ARQUIVOABERTO arquivosabertos[20];
+
+static DWORD INVALIDO = -1; 
 void init(void);
+char* inodeparachar(struct t2fs_record*);
+struct t2fs_record* inicializainode(char*);
+struct t2fs_record* carregaarquivo(DWORD);
+void excluiarquivobitmap(DWORD*);
+DWORD* listablocosarquivo(struct t2fs_record*, DWORD*);
 int achablocolivre(void);
 int achabit(char*,int*);
 
