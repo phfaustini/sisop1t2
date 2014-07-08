@@ -50,69 +50,25 @@ int achabit(char *buffer,int *counter)
 }
 
 
-int achablocolivre()
+DWORD* achablocolivre()
 {
-    int counter = 0, ret = 0, i, j;
-    char *buffer, *buffer2;
+    int counter = 0, ret = 0;
+    char *buffer;
+    DWORD* retorno = (DWORD*) malloc(sizeof(DWORD*));
     //direto 1
     buffer = le_bloco(superbloco->BitMapReg.dataPtr[0]);
         
     ret = achabit(buffer, &counter);
-
+    
     if(ret == 1 && counter < superbloco->DiskSize)
-        return counter;
-
-    //mesmo que esse sistema tenha no máximo 1024 
-    //os outros bitmaps estão sendo feitos para deixar genético
-    if(superbloco->NofBlocks >= (8*superbloco->BlockSize))	//direto 2
     {
-        buffer = le_bloco(superbloco->BitMapReg.dataPtr[1]);
-        ret = achabit(buffer, &counter);
-
-        if(ret == 1)
-            return counter;
-    }
-
-    long int end;
-    if(superbloco->NofBlocks >= (8*superbloco->BlockSize*2))	//indireção simples
-    {
-
-        buffer = le_bloco(superbloco->BitMapReg.singleIndPtr);
-    //cada 4 posições formam um endereço de bloco
-        for(i = 0; i<tamanho_bloco; i+=4)
+        retorno = (DWORD*)counter;
+        
+    }else
         {
-            end = buffer[i+3]<<24 | buffer[i+2]<<16 | buffer[i+1]<<8| buffer[i];
-            buffer = le_bloco(end);
-            ret = achabit(buffer, &counter);
-
-            if(ret== 1)
-                return counter;
-
+            retorno = (DWORD*)-1;
         }
-
-    }
-
-    if(superbloco->NofBlocks >= (8*superbloco->BlockSize*2 + 8*superbloco->BlockSize*superbloco->BlockSize/4))	//indireção dupla
-    {
-        buffer2 = le_bloco(superbloco->BitMapReg.doubleIndPtr);
-        for(j = 0; j<tamanho_bloco; j+=4)
-
-            end = buffer2[j+3]<<24 | buffer2[j+2]<<16 | buffer2[j+1]<<8| buffer2[j];
-        buffer = le_bloco(end);
-        for(i = 0; i<(tamanho_bloco/4); i+=4)
-        {
-            end = buffer[i+3]<<24 | buffer[i+2]<<16 | buffer[i+1]<<8| buffer[i];
-            buffer = le_bloco(end);
-            ret = achabit(buffer, &counter);
-
-            if(ret == 1)
-                return counter;
-
-        }
-    }
-
-
-    return -1;
+    return retorno;
 }
 
 DWORD* listablocosarquivo(struct t2fs_record *file, DWORD *lista)
@@ -201,6 +157,63 @@ DWORD* listablocosarquivo(struct t2fs_record *file, DWORD *lista)
 
 	return lista;
 }
+
+void adicionadword(DWORD* endbloco, DWORD *novoend)
+{
+
+int i = 0;
+    for(i = 0; i < 256 ; i++)
+    {
+        if(endbloco[i]==INVALIDO)
+        {
+            endbloco[i] = *novoend;
+            break;
+        }
+    }
+
+}
+
+//Essa função deve servir também como template para percorrer blocos de um arquico
+
+void escreveenderecopai(struct t2fs_record* pai, DWORD *endereco)
+{
+
+    DWORD *blocolivre;
+    DWORD *endbloco = (DWORD*) malloc(tamanho_bloco);
+    
+
+    if(pai->dataPtr[0] == INVALIDO)
+    {
+        pai->dataPtr[0] = *endereco;
+    }
+    else
+    {
+        if(pai->dataPtr[1] == INVALIDO)
+        {
+            pai->dataPtr[1] = *endereco;
+        }else
+        {
+            if(pai->singleIndPtr == INVALIDO)
+            {
+                blocolivre = achablocolivre();
+                pai->singleIndPtr = *criablocoenderecos(blocolivre);
+
+            }else
+                {
+                    endbloco = (DWORD*)le_bloco(pai->singleIndPtr);
+                    adicionadword(endbloco, endereco);
+                    char* aux = (char*)endbloco;
+                    escreve_bloco( aux, pai->singleIndPtr);
+
+                }
+        }
+            
+    }
+
+}
+
+
+
 
 void excluiarquivobitmap(DWORD *lista)
 {
@@ -421,6 +434,7 @@ char* subcaminho(char* caminho, int j)
 {
     int i=1, k=0;
     char* buffer = (char*)malloc(39);
+
 
     while(k<j)
     {

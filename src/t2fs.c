@@ -21,7 +21,8 @@ t2fs_file t2fs_create (char *nome)
 
 	validadecaminho = caminho_valido(nome);
 
-
+	
+	/*
 	switch(validadecaminho)
 	{
 		case -1:
@@ -59,7 +60,7 @@ t2fs_file t2fs_create (char *nome)
 
 			break;
 	}
-
+*/
 	return 1;
 }
 

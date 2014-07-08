@@ -20,7 +20,7 @@ void inicializavetorabertos();//invalida todos os handles do vetor de abertos
 int marcarabertos(DWORD, DWORD);//procura um handle invalido no vetor de abertos e o preenche com dados válidos
 int alteracurentpoiter(DWORD handle, DWORD currentpointer);//varre a lista de arquivos abertos e altera current pointer
 
-int achablocolivre(void); //acha um bloco livre no bitmap
+DWORD* achablocolivre(void); //acha um bloco livre no bitmap
 int achabit(char*,int*); //acha um bitlivre no bitmap e o marca como ocupado. Retorna o bloco correpondente a esse bit
 
 DWORD* criablocoenderecos(DWORD *blocolivre);//cria um bloco e o preenche com endereços invalidos, retorna o endereço do bloco
@@ -30,12 +30,17 @@ struct t2fs_record* carregaarquivo(DWORD);//dado um bloco retorna um record
 void excluiarquivobitmap(DWORD*);//usa listablocosarquivo para liberar blocos no bitmap
 DWORD* listablocosarquivo(struct t2fs_record*, DWORD*);//lista todos os blocos válidos de um arquivo
 static DWORD INVALIDO = -1; 
+DWORD* vetcharparavetdword(char *buffer);
+struct t2fs_record* escrevearquivo(struct t2fs_record*, char *buffer, int tambytes);
 
+void adicionadword(DWORD* endbloco, DWORD *novoend);
+void escreveenderecopai(struct t2fs_record* pai, DWORD *endereco);
 struct registro_bloco
 {
 	struct t2fs_record* registro;
 	DWORD bloco;
 };
+
 
 WORD tamanho_bloco;
 #define TAM_SETOR 256
