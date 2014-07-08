@@ -12,28 +12,55 @@ char *t2fs_identify (void)
 t2fs_file t2fs_create (char *nome)
 { // checar caminho valido,super bloco valido,bitmap valido
 
-
 	init();
-
-	/*struct t2fs_record* d = (struct t2fs_record*)malloc(sizeof(struct t2fs_record)); //procura_descritor_num_diretorio("teste1",(DWORD*)malloc(sizeof(DWORD)), superbloco->BitMapReg);
-	printf("%d \n",caminho_valido("/dir1/teste4-dir1"));
-	d = get_descritor_arquivo("/dir1/teste4-dir1");
-	if(d!=NULL)
-		printf(" %s\n", d->name);
-	//printBloco(1);
-
-	//printf("Bloco livre: %i\n", achablocolivre());
-*/
-	DWORD blocolivre = achablocolivre();
-	printf("Bloco livre: %i\n", blocolivre);
-	/*struct t2fs_record* record = (struct t2fs_record*) malloc(tamanho_bloco);
-	record = inicializainode(nome);
+	int validadecaminho;
+	DWORD blocolivre;
+	struct t2fs_record* d = (struct t2fs_record*)malloc(sizeof(struct t2fs_record)); //procura_descritor_num_diretorio("teste1",(DWORD*)malloc(sizeof(DWORD)), superbloco->BitMapReg);
+	struct t2fs_record* record = (struct t2fs_record*) malloc(tamanho_bloco);
 	char* buffer = (char*) malloc(tamanho_bloco);
-	buffer = inodeparachar(record);
-	escreve_bloco(buffer, blocolivre);
-*/
 
-return 1;
+	//validadecaminho = caminho_valido(nome);
+
+
+	switch(validadecaminho)
+	{
+		case -1:
+			printf("CAMINHO FORNECIDO INVALIDO.\n");
+			return INVALIDO;
+			break;
+		case 0:
+			blocolivre = achablocolivre();
+			if(!marcarabertos(blocolivre, 0))
+			{
+				printf("ATINGIDO O LIMITE MAXIMO DE ARQUIVOS ABERTOS.\n");
+				return INVALIDO;
+
+			}
+
+			//colocar bloco livre no diretório pai
+			record = inicializainode(nome);
+			buffer = inodeparachar(record);
+			escreve_bloco(buffer, blocolivre);
+			break;
+		default:
+			d = get_descritor_arquivo(nome);
+			t2fs_delete(d->name);
+			blocolivre = achablocolivre();
+			if(!marcarabertos(blocolivre, 0))
+			{
+				printf("ATINGIDO O LIMITE MAXIMO DE ARQUIVOS ABERTOS.\n");
+				return INVALIDO;
+
+			}
+			//colocar bloco livre no diretório pai
+			record = inicializainode(nome);
+			buffer = inodeparachar(record);
+			escreve_bloco(buffer, blocolivre);
+
+			break;
+	}
+
+	return 1;
 }
 
 int t2fs_delete (char *nome)
@@ -41,13 +68,10 @@ int t2fs_delete (char *nome)
 
 
 	init();
-	//recebo o nome do arquivo e através dele preciso achar o bloco do seu i-node
-	
 	DWORD *listablocos = (DWORD*) malloc(superbloco->NofBlocks);
 	struct t2fs_record* record = (struct t2fs_record*)malloc(tamanho_bloco);
-	record = carregaarquivo(superbloco->RootDirReg.dataPtr[0]);
 	
-
+	//record = carregaarquivo(caminho_valido(nome));
 	listablocos = listablocosarquivo(record, listablocos);
 	excluiarquivobitmap(listablocos);
 

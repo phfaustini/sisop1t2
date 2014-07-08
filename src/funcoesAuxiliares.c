@@ -180,11 +180,28 @@ void imprime(unsigned char comp)//auxiliar para auxiliares- apagar depois
         printf("%i", v[i]);
     }
 }
+void imprime2(DWORD comp)//auxiliar para auxiliares- apagar depois
+{
+    int t = 32;
+    int i = 0;
+    DWORD v[32];
+
+    for(; i<t; i++)
+    {
+        v[t-1-i] = (DWORD)comp%2;
+        comp = (DWORD)comp/2;
+    }
+    for(i = 0; i<t; i++)
+    {
+        printf("%u", v[i]);
+    }
+}
 
 void init(void)
 {
 
 	superbloco = leSuperBloco();
+    inicializavetorabertos();
 	
 }
 
@@ -196,7 +213,7 @@ int achabit(char *buffer,int *counter)
 
     unsigned char aux;
 
-    unsigned char comparador = (char)(1<<7);
+    unsigned char comparador;
 
     int i, j;
 
@@ -232,21 +249,14 @@ int achablocolivre()
     char *buffer, *buffer2;
 //direto 1
     buffer = le_bloco(superbloco->BitMapReg.dataPtr[0]);
-    for(i = 0 ; i < 8 ; i++)
-    {
-        imprime(buffer[i]);
-        printf("\n");
-    }
         
-    //imprime(superbloco->BitMapReg.dataPtr[1]);
-    //buffer = le_bloco(superbloco->BitMapReg.dataPtr[0]);
-
     ret = achabit(buffer, &counter);
 
     if(ret == 1 && counter < superbloco->DiskSize)
         return counter;
 
-//mesmo que esse sistema tenha no máximo 1024 os outros bitmaps estão sendo feitos para deixar genético
+//mesmo que esse sistema tenha no máximo 1024 
+//os outros bitmaps estão sendo feitos para deixar genético
     if(superbloco->NofBlocks >= (8*superbloco->BlockSize))	//direto 2
     {
         buffer = le_bloco(superbloco->BitMapReg.dataPtr[1]);
@@ -262,9 +272,9 @@ int achablocolivre()
 
         buffer = le_bloco(superbloco->BitMapReg.singleIndPtr);
 //cada 4 posições formam um endereço de bloco
-        for(i = 0; i<(tamanho_bloco/4); i+=4)
+        for(i = 0; i<tamanho_bloco; i+=4)
         {
-            end = buffer[i]<<24 | buffer[i+1]<<16 | buffer[i+2]<<8| buffer[i+3];
+            end = buffer[i+3]<<24 | buffer[i+2]<<16 | buffer[i+1]<<8| buffer[i];
             buffer = le_bloco(end);
             ret = achabit(buffer, &counter);
 
@@ -278,13 +288,13 @@ int achablocolivre()
     if(superbloco->NofBlocks >= (8*superbloco->BlockSize*2 + 8*superbloco->BlockSize*superbloco->BlockSize/4))	//indireção dupla
     {
         buffer2 = le_bloco(superbloco->BitMapReg.doubleIndPtr);
-        for(j = 0; j<(tamanho_bloco/4); j+=4)
+        for(j = 0; j<tamanho_bloco; j+=4)
 
-            end = buffer2[j]<<24 | buffer2[j+1]<<16 | buffer2[j+2]<<8| buffer2[j+3];
+            end = buffer2[j+3]<<24 | buffer2[j+2]<<16 | buffer2[j+1]<<8| buffer2[j];
         buffer = le_bloco(end);
         for(i = 0; i<(tamanho_bloco/4); i+=4)
         {
-            end = buffer[i]<<24 | buffer[i+1]<<16 | buffer[i+2]<<8| buffer[i+3];
+            end = buffer[i+3]<<24 | buffer[i+2]<<16 | buffer[i+1]<<8| buffer[i];
             buffer = le_bloco(end);
             ret = achabit(buffer, &counter);
 
@@ -390,118 +400,7 @@ struct t2fs_record* procura_descritor_num_bloco_diretorio(char* nome, DWORD bloc
 
 
 
-//Precisa de TESTES com arquivos que ocupem mais de um bloco
-struct t2fs_record* procura_descritor_num_diretorio(char* nome, DWORD* offset, struct t2fs_record* descritor)
-{
-    int i=0;
-    struct t2fs_record* descr = (struct t2fs_record*)malloc(sizeof(struct t2fs_record));
-    char* buffer;
-    long int end;
-
-    if(nome!=NULL)
-    {
-        if(descritor->blocksFileSize==1)
-        {
-            descr=procura_descritor_num_bloco_diretorio(nome, descritor->dataPtr[0]);
-            if(descr!=NULL)
-            {
-                return descr;
-            }
-            else return NULL;
-        }
-        else if(descritor->blocksFileSize==2)
-        {
-            descr=procura_descritor_num_bloco_diretorio(nome, descritor->dataPtr[0]);
-            if(descr!=NULL)
-                return descr;
-            else
-                descr=procura_descritor_num_bloco_diretorio(nome, descritor->dataPtr[1]);
-            if(descr!=NULL)
-                return descr;
-            else return NULL;
-        }
-        else if(descritor->blocksFileSize >= (8*descritor->blocksFileSize*2))
-        {
-            buffer = le_bloco(descritor->singleIndPtr);
-            end = buffer[i]<<24 | buffer[i+1]<<16 | buffer[i+2]<<8| buffer[i+3];
-            descr=procura_descritor_num_bloco_diretorio(nome, end);
-            if(descr!=NULL)
-                return descr;
-            else return NULL;
-
-        }
-        else if(descritor->blocksFileSize >= (8*descritor->blocksFileSize*2 + 8*descritor->blocksFileSize*descritor->blocksFileSize/4))
-        {
-            buffer = le_bloco(descritor->doubleIndPtr);
-            end = buffer[i]<<24 | buffer[i+1]<<16 | buffer[i+2]<<8| buffer[i+3];
-            descr=procura_descritor_num_bloco_diretorio(nome, end);
-            if(descr!=NULL)
-                return descr;
-            else return NULL;
-        }
-    }
-    return NULL;
-}
-
-
-//Acho que ta ok
-DWORD procura_descritores(int niveis, char* caminho, char* final, struct t2fs_record* descritor)//Assume que recebe níveis válido. TO NESSA
-{
-    int i;
-    DWORD* ptr = (DWORD*)malloc(sizeof(DWORD)); // Sugestão no Nicolas, ainda não usei
-
-    /*Vai ser uma busca para cada nível no caminho (e.g. /home/pedro/dir tem 3 níveis, logo serão 3 iterações no for)
-    Até a penúltima busca, se houver algum erro é porque o caminho passado é inválido, então retorna -1;
-    Quando chegar na última busca (quando cai no else) o resultado não pode mais ser caminho inválido: ou
-    o arquivo está lá ou não está. Se não estiver, retorna 0 (significa que há 0 arquivos com esse nome nesse caminho).
-    Senão, o for termina e o retorno é 1 (significando que há 1 arquivo com esse nome nesse caminho)*/
-    for(i=0; i<niveis; i++)
-    {
-        if(i<niveis-1)
-        {
-//e.g. se o caminho for /home/pedro/dir, e i=1, ele procurará a pasta 'pedro'
-//Dúvida: dataPtr[1] é usado quando??
-            descritor=procura_descritor_num_diretorio(subcaminho(caminho,i), ptr, descritor);
-            if(descritor==NULL)
-            {
-                return -1;
-            }
-        }
-        else
-        {
-            descritor=procura_descritor_num_diretorio(final, ptr, descritor);
-            if(descritor==NULL)
-            {
-                return 0;
-            }
-        }
-    }
-    return descritor->dataPtr[0];
-}
-
-struct t2fs_record* procura_descritores2(int niveis, char* caminho, char* final, struct t2fs_record* descritor)//Assume que recebe níveis válido.
-{
-    int i;
-    DWORD* ptr = (DWORD*)malloc(sizeof(DWORD)); // Sugestão no Nicolas, ainda não usei
-
-    for(i=0; i<niveis; i++)
-    {
-        if(i<niveis-1)
-        {
-            descritor=procura_descritor_num_diretorio(subcaminho(caminho,i), ptr, descritor);
-            if(descritor==NULL)
-                return NULL;
-        }
-        else
-        {
-            descritor=procura_descritor_num_diretorio(final, ptr, descritor);
-            if(descritor==NULL)
-                return NULL;
-        }
-    }
-    return descritor;
-}
-
+/*
 DWORD caminho_valido(char* caminho)
 {
     int niveis;
@@ -513,13 +412,13 @@ DWORD caminho_valido(char* caminho)
     if(niveis==-1) // Testa se o caminho está mal formatado
         return -1;
     return procura_descritores(niveis,caminho,nome_final(caminho),descritor);
-}
+}*/
 
 DWORD* listablocosarquivo(struct t2fs_record *file, DWORD *lista)
 {
 	int i = 0, j = 0, k = 0;
 
-	DWORD aux, aux2;
+	DWORD *aux, *aux2;
 
 	char *buffer, *buffer2;
 	if(file->dataPtr[0] != INVALIDO)
@@ -540,20 +439,22 @@ DWORD* listablocosarquivo(struct t2fs_record *file, DWORD *lista)
 			return lista;
 		}
 	
-	
-	
+	char auxbuffer[4];
 
 	if(file->singleIndPtr != INVALIDO)
 	{
 		buffer = le_bloco(file->singleIndPtr);
 		for(j = 0 ; j < tamanho_bloco;j+=4)
 		{
-			aux = buffer[j+3]<<24 | buffer[j+2]<<16 |buffer[j+1]<<8 |buffer[j];
-			printf("%u\n", aux);
-
-			if(aux != INVALIDO)
+            auxbuffer[0] = buffer[j];
+            auxbuffer[1] = buffer[j+1];
+            auxbuffer[2] = buffer[j+2];
+            auxbuffer[3] = buffer[j+3];
+            aux = (DWORD*)auxbuffer;
+			
+			if(*aux != INVALIDO)
 			{
-				lista[j++] = aux;
+				lista[j++] = *aux;
 			}
 		}
 	}else
@@ -569,14 +470,27 @@ DWORD* listablocosarquivo(struct t2fs_record *file, DWORD *lista)
 		buffer = le_bloco(file->doubleIndPtr);
 		for(j = 0 ; j < tamanho_bloco;j+=4)
 		{
-			aux = buffer[i+3]<<24 | buffer[i+2]<<16 |buffer[i+1]<<8 |buffer[i];
-			buffer2 = le_bloco((int)aux);
+			auxbuffer[0] = buffer[j];
+            auxbuffer[1] = buffer[j+1];
+            auxbuffer[2] = buffer[j+2];
+            auxbuffer[3] = buffer[j+3];
+            aux = (DWORD*)auxbuffer;
+
+			buffer2 = le_bloco(*aux);
 			for(k = 0 ; k < tamanho_bloco;k++)
-				aux2 = buffer2[k+3]<<24 | buffer2[k+2]<<16 |buffer2[k+1]<<8 |buffer2[k];
-				if(aux2 != INVALIDO)
-				{
-					lista[i++] = aux2;
-				}
+            {
+                auxbuffer[0] = buffer2[k];
+                auxbuffer[1] = buffer2[k+1];
+                auxbuffer[2] = buffer2[k+2];
+                auxbuffer[3] = buffer2[k+3];
+                aux2 = (DWORD*)auxbuffer; 
+                if(*aux2 != INVALIDO)
+                {
+                    lista[i++] = *aux2;
+                }
+
+            }
+				
 		}
 	}else
 		{
@@ -613,6 +527,7 @@ struct t2fs_record* carregaarquivo(DWORD bloco)
 	struct t2fs_record* record = (struct t2fs_record*) malloc(tamanho_bloco);
 	int i;
 	buffer = le_bloco(bloco);
+    
 
 	record->TypeVal = buffer[0];
 	
@@ -713,14 +628,128 @@ struct t2fs_record* get_descritor_arquivo(char* caminho)
     int niveis;
     struct t2fs_record raiz = get_registro_raiz();
     struct t2fs_record* arquivo = (struct t2fs_record*)malloc(sizeof(struct t2fs_record));
-    if(caminho_valido(caminho)>0)
+   // if(caminho_valido(caminho)>0)
     {
         niveis = conta_niveis_caminho(caminho);
         if(niveis==-1) // Testa se o caminho está mal formatado
             return NULL;
-        arquivo = procura_descritores2(niveis,caminho,nome_final(caminho),&raiz);
+        //arquivo = procura_descritores2(niveis,caminho,nome_final(caminho),&raiz);
         return arquivo;
     }
-    else return NULL;
+   // else return NULL;
 }
 
+void inicializavetorabertos()
+{
+int i;
+    for(i = 0 ; i < 20;i++)
+        arquivosabertos[i].handle = INVALIDO;
+
+}
+
+int marcarabertos(DWORD handle, DWORD currentpointer)
+{
+int i;
+    for(i = 0 ; i < 20 ; i++)
+    {
+        if(arquivosabertos[i].handle == INVALIDO)
+        {
+            arquivosabertos[i].handle = handle;
+            arquivosabertos[i].currentpointer = currentpointer;
+            return 1;
+        }
+    }
+    return 0;
+
+}
+
+int alteracurentpoiter(DWORD handle, DWORD currentpointer)
+{
+    int i;
+    for(i = 0 ; i < 20 ; i++)
+    {
+        if(arquivosabertos[i].handle == handle)
+        {
+            arquivosabertos[i].currentpointer = currentpointer;
+            return 1;
+        }
+    }
+
+printf("ERRO: ARQUIVO NAO ESTA ABERTO");
+return 0;
+}
+
+
+DWORD* criablocoenderecos(DWORD *blocolivre)
+{
+    char* buffer = (char*) malloc(tamanho_bloco);
+
+    DWORD aux = INVALIDO;
+
+    int i = 0;
+
+    buffer[0] = *blocolivre;
+    buffer[1] = *blocolivre>>8;
+    buffer[2] = *blocolivre>>16;
+    buffer[3] = *blocolivre>>24;
+    for(i = 4 ; i < tamanho_bloco; i+=4)
+    {
+        buffer[i] = aux;
+        buffer[i+1] = aux>>8;
+        buffer[i+2] = aux>>16;
+        buffer[i+3] = aux>>24;
+    }
+    escreve_bloco(buffer, *blocolivre);
+
+return blocolivre;
+}
+char* get_caminho_do_pai(char* caminho) 
+{ 
+    char* buffer = (char*)malloc(tamanho_bloco); 
+    int niveis = conta_niveis_caminho(caminho), i=0,k=0; 
+    if(niveis>1) 
+    { 
+        while(i!=niveis) 
+            { 
+                buffer[k]=caminho[k]; 
+                if(buffer[k]=='/') i++; 
+                    k++; 
+            } 
+                buffer[k-1]='\0';
+
+        return buffer; }
+     else if(niveis==1) 
+            return "/"; 
+
+    else return caminho; 
+}
+
+
+//recebe um caminho e insere um bloco no d
+int insereblocorecord(char *nome, DWORD *bloco)
+{
+    
+    char *nomepai = get_caminho_do_pai(nome);
+    struct t2fs_record* record = (struct t2fs_record*) malloc(tamanho_bloco);
+    //char* buffer = (char*) malloc(tamanho_bloco);
+    record = get_descritor_arquivo(nomepai);
+    
+
+    if(record->dataPtr[0] == INVALIDO)
+        record->dataPtr[0] = *bloco;
+
+    if(record->dataPtr[1] == INVALIDO)
+        record->dataPtr[1] = *bloco;
+
+    if(record->singleIndPtr == INVALIDO)
+    {
+        record->singleIndPtr = *criablocoenderecos(bloco);
+
+    }else{
+      
+        }
+        
+
+return 0;
+
+}
