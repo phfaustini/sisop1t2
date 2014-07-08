@@ -6,7 +6,7 @@
 int main(int argc, char *argv[])
 {
 	char *nome;	
-	nome = "/dir1";
+	nome = "/";
 	
 	//t2fs_delete (nome);
 	//t2fs_create (nome);

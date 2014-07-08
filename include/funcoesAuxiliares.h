@@ -63,6 +63,7 @@ DWORD procura_descritores(int niveis, char* caminho, char* final, struct registr
 DWORD caminho_valido(char* caminho); /* Há três retornos:
 									-2: caminho inválido (char* vazio, não comece com '/', nao tenha algum diretorio do meio)
 									 -1: caminho válido, mas o arquivo ao final do caminho não existe no diretório
+									 0: é raiz
 									 outro: bloco onde está o arquivo*/
 
 

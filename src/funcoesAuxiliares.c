@@ -780,6 +780,9 @@ DWORD caminho_valido(char* caminho)
     struct registro_bloco* descritor = (struct registro_bloco*)malloc(sizeof(struct registro_bloco));
     descritor->registro=&raiz;
 
+    if(strcmp(caminho,"/")==0)
+        return 0;
+
     niveis = conta_niveis_caminho(caminho);
     if(niveis==-1) // Testa se o caminho está mal formatado
         return -2;
@@ -789,13 +792,20 @@ DWORD caminho_valido(char* caminho)
 
 struct t2fs_record* get_descritor_arquivo(char* caminho)
 {
+    init();
     int niveis;
     struct t2fs_record raiz = get_registro_raiz();
     struct registro_bloco* descritor = (struct registro_bloco*)malloc(sizeof(struct registro_bloco));
     struct t2fs_record* arquivo = (struct t2fs_record*)malloc(sizeof(struct t2fs_record));
     descritor->registro=&raiz;
 
-    if(caminho_valido(caminho)>=0)
+    if(caminho_valido(caminho)==0)
+    {
+        return descritor->registro;
+    }
+
+
+    if(caminho_valido(caminho)>0)
     {
         niveis = conta_niveis_caminho(caminho);
         if(niveis==-1) // Testa se o caminho está mal formatado
@@ -810,6 +820,13 @@ struct t2fs_record* procura_descritores2(int niveis, char* caminho, char* final,
 {
     int i;
     DWORD* ptr = (DWORD*)malloc(sizeof(DWORD)); // Sugestão no Nicolas, ainda não usei
+    struct t2fs_record raiz = get_registro_raiz();
+
+    if(niveis==0)
+    {
+        descritor->registro=&raiz;
+        return descritor->registro;
+    }
 
     for(i=0; i<niveis; i++)
     {

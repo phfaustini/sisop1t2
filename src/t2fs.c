@@ -9,7 +9,7 @@ char *t2fs_identify (void)
 	return "Bruno Pinto Silva - 217446 \nPedro Henrique Arruda Faustini - 217432\n\0";
 }
 
-t2fs_file t2fs_create (char *nome)
+/*t2fs_file t2fs_create (char *nome)
 { // checar caminho valido,super bloco valido,bitmap valido
 
 	init();
@@ -22,7 +22,7 @@ t2fs_file t2fs_create (char *nome)
 	validadecaminho = caminho_valido(nome);
 
 	
-	/*
+	
 	switch(validadecaminho)
 	{
 		case -1:
@@ -60,9 +60,9 @@ t2fs_file t2fs_create (char *nome)
 
 			break;
 	}
-*/
+
 	return 1;
-}
+}*/
 
 int t2fs_delete (char *nome)
 {
@@ -117,4 +117,31 @@ t2fs_file t2fs_open(char* nome)
 				}
 				else return INVALIDO;
 	}
+}
+
+int t2fs_seek (t2fs_file handle, unsigned int offset)
+{
+	int i;
+	for(i=0;i<20;i++)
+	{
+		if (arquivosabertos[i].handle == handle)
+		{
+			struct t2fs_record* record = (struct t2fs_record*)malloc(sizeof(struct t2fs_record));
+			record = carregaarquivo(handle);
+			if(offset > record->bytesFileSize || offset < -1)
+				return INVALIDO;
+			if(offset >= 0)
+			{
+				alteracurentpoiter(handle,offset);
+				return 0;
+			}
+			if(offset == -1)
+			{
+				return INVALIDO; //sim, isso ta errado, tenho que mudar
+			}
+
+		}
+	}
+	return INVALIDO;
+
 }
