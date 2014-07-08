@@ -19,7 +19,7 @@ t2fs_file t2fs_create (char *nome)
 	struct t2fs_record* record = (struct t2fs_record*) malloc(tamanho_bloco);
 	char* buffer = (char*) malloc(tamanho_bloco);
 
-	//validadecaminho = caminho_valido(nome);
+	validadecaminho = caminho_valido(nome);
 
 
 	switch(validadecaminho)
