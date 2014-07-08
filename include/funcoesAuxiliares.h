@@ -48,7 +48,7 @@ DWORD caminho_valido(char* caminho); /* Há três retornos:
 									 0: caminho válido, mas o arquivo ao final do caminho não existe no diretório
 									 outro: bloco onde está o arquivo*/
 
-
+char* get_caminho_do_pai(char* caminho);
 typedef struct aberto
 {
 	DWORD handle;
@@ -58,7 +58,7 @@ typedef struct aberto
 
 ARQUIVOABERTO arquivosabertos[20];
 
-static DWORD INVALIDO = -1; 
+
 void init(void);
 char* inodeparachar(struct t2fs_record*);
 struct t2fs_record* inicializainode(char*);

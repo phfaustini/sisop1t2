@@ -4,6 +4,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 
+DWORD INVALIDO = -1; 
 WORD tamanho_bloco=0;
 
 void printBloco(int bloco)
@@ -393,115 +394,56 @@ struct registro_bloco* procura_descritor_num_diretorio(char* nome, DWORD* offset
 
     if(nome!=NULL)
     {
-        if(descritor->registro->blocksFileSize==1)
-        {
+        if(descritor->registro->dataPtr[0]!=INVALIDO){
             descr=procura_descritor_num_bloco_diretorio(nome, descritor->registro->dataPtr[0]);
             if(descr!=NULL)
             {
                 descr->bloco=descritor->registro->dataPtr[0];
                 return descr;
             }
-            else return NULL;
         }
-        else if(descritor->registro->blocksFileSize==2)
+        if(descritor->registro->dataPtr[1]!=INVALIDO)
         {
-            descr=procura_descritor_num_bloco_diretorio(nome, descritor->registro->dataPtr[0]);
-            if(descr!=NULL)
-            {
-                descr->bloco=descritor->registro->dataPtr[0];
-                return descr;
-            }
-            else
-                descr=procura_descritor_num_bloco_diretorio(nome, descritor->registro->dataPtr[1]);
+            descr=procura_descritor_num_bloco_diretorio(nome, descritor->registro->dataPtr[1]);
             if(descr!=NULL)
             {
                 descr->bloco=descritor->registro->dataPtr[1];
                 return descr;
             }
-            else return NULL;
         }
-        // INDIREÇÃO SIMPLES. TO PERDIDO
-        else if(descritor->registro->blocksFileSize >= (8*descritor->registro->blocksFileSize*2))
+        if(descritor->registro->singleIndPtr!=INVALIDO)// A partir daqui procura na indireção simples
         {
-            descr=procura_descritor_num_bloco_diretorio(nome, descritor->registro->dataPtr[0]);
-            if(descr!=NULL)
+            buffer = le_bloco(descritor->registro->singleIndPtr);
+            for(i = 0; i<(tamanho_bloco/4); i+=4) //cada 4 posições formam um endereço de bloco
             {
-                descr->bloco=descritor->registro->dataPtr[0];
-                return descr;
-            }
-            else
-                descr=procura_descritor_num_bloco_diretorio(nome, descritor->registro->dataPtr[1]);
-            if(descr!=NULL)
-            {
-                descr->bloco=descritor->registro->dataPtr[1];
-                return descr;
-            }
-            else // A partir daqui procura na indireção simples
-            {
-                buffer = le_bloco(descritor->registro->singleIndPtr);
-               for(i = 0; i<(tamanho_bloco/4); i+=4) //cada 4 posições formam um endereço de bloco
+                end = buffer[i+3]<<24 | buffer[i+2]<<16 | buffer[i+1]<<8| buffer[i];
+                descr=procura_descritor_num_bloco_diretorio(nome, end);
+                if(descr!=NULL)
                 {
-                    end = buffer[i]<<24 | buffer[i+1]<<16 | buffer[i+2]<<8| buffer[i+3];
-                    buffer = le_bloco(end);
-                    descr=procura_descritor_num_bloco_diretorio(nome, end);
-                    if(descr!=NULL)
-                    {
-                        descr->bloco = descritor->registro->singleIndPtr;
-                        return descr;
-                    }
-                    else return NULL;
-                }      
-            }
-        }
-        else
-                  //INDIREÇÃO DUPLA. TO PERDIDO
-                if(descritor->registro->blocksFileSize >= (8*descritor->registro->blocksFileSize*2 + 8*descritor->registro->blocksFileSize*descritor->registro->blocksFileSize/4))
-                {
-                    descr=procura_descritor_num_bloco_diretorio(nome, descritor->registro->dataPtr[0]);
-                    if(descr!=NULL)
-                    {
-                        descr->bloco=descritor->registro->dataPtr[0];
-                        return descr;
-                    }
-                    else
-                        descr=procura_descritor_num_bloco_diretorio(nome, descritor->registro->dataPtr[1]);
-                    if(descr!=NULL)
-                    {
-                        descr->bloco=descritor->registro->dataPtr[1];
-                        return descr;
-                    }
-                    else
-                        buffer = le_bloco(descritor->registro->singleIndPtr);
-                        for(i = 0; i<(tamanho_bloco/4); i+=4) //cada 4 posições formam um endereço de bloco
-                        {
-                            end = buffer[i]<<24 | buffer[i+1]<<16 | buffer[i+2]<<8| buffer[i+3];
-                            buffer = le_bloco(end);
-                            descr=procura_descritor_num_bloco_diretorio(nome, end);
-                            if(descr!=NULL)
-                            {
-                                descr->bloco = descritor->registro->singleIndPtr;
-                                return descr;
-                            }
-                        }
-                        //aqui ind dupla 
-                        buffer = le_bloco(descritor->registro->doubleIndPtr);
-                        for(i = 0; i<(tamanho_bloco/4); i+=4)
-                            end = buffer[i]<<24 | buffer[i+1]<<16 | buffer[i+2]<<8| buffer[i+3];
-                        
-                        buffer = le_bloco(end);
-                        for(i = 0; i<(tamanho_bloco/4); i+=4)
-                        {
-                            end = buffer[i]<<24 | buffer[i+1]<<16 | buffer[i+2]<<8| buffer[i+3];
-                            buffer = le_bloco(end);
-                            descr=procura_descritor_num_bloco_diretorio(nome, end);
-                            if(descr!=NULL)
-                            {
-                                descr->bloco = descritor->registro->doubleIndPtr;
-                                return descr;
-                            }
-                        }    
-                        
+                    descr->bloco = descritor->registro->singleIndPtr;
+                    return descr;
                 }
+            }      
+        }
+        if(descritor->registro->doubleIndPtr!=INVALIDO)
+        {                                
+            buffer = le_bloco(descritor->registro->doubleIndPtr);
+            for(i = 0; i<(tamanho_bloco/4); i+=4)
+                end = buffer[i+3]<<24 | buffer[i+2]<<16 | buffer[i+1]<<8| buffer[i];
+                        
+            buffer = le_bloco(end);
+            for(i = 0; i<(tamanho_bloco/4); i+=4)
+            {
+                end = buffer[i+3]<<24 | buffer[i+2]<<16 | buffer[i+1]<<8| buffer[i];
+                descr=procura_descritor_num_bloco_diretorio(nome, end);
+                if(descr!=NULL)
+                {
+                    descr->bloco = descritor->registro->doubleIndPtr;
+                    return descr;
+                }
+            }                 
+        }
+        return NULL;
     }
     return NULL;
 }
@@ -791,3 +733,108 @@ struct t2fs_record* get_descritor_arquivo(char* caminho)
     else return NULL;
 }
 
+char* get_caminho_do_pai(char* caminho)
+{
+    char* buffer = (char*)malloc(tamanho_bloco);
+    int niveis = conta_niveis_caminho(caminho), i=0,k=0;
+    if(niveis>1)
+    {
+        while(i!=niveis)
+        {
+            buffer[k]=caminho[k];
+            if(buffer[k]=='/')
+                i++;
+            k++;
+        }
+        buffer[k-1]='\0';
+
+        return buffer;
+    }
+    else if(niveis==1)
+        return "/";
+    else return caminho;
+}
+
+DWORD* criablocoenderecos()
+{
+    char* buffer = (char*) malloc(tamanho_bloco);
+    DWORD* blocolivre = (DWORD*) malloc(sizeof(DWORD));
+    *blocolivre = achablocolivre();
+    DWORD aux = INVALIDO;
+
+    int i = 0;
+    for(i = 0 ; i < tamanho_bloco; i+=4)
+    {
+        buffer[i] = aux;
+        buffer[i+1] = aux>>8;
+        buffer[i+2] = aux>>16;
+        buffer[i+3] = aux>>24;
+    }
+    escreve_bloco(buffer, *blocolivre);
+
+    return blocolivre;
+}
+
+/*
+BOOL bloco_livre_diretorio_pai(DWORD bloco_livre, char* nome) // se achou um luga, retorna true..?
+{
+    struct t2fs_record* diretorio = (struct t2fs_record*)malloc(sizeof(struct t2fs_record));
+    DWORD bloco_diretorio; bloco_diretorio2;
+    long int end;
+    char* buffer = (char*)malloc(tamanho_bloco), buffer2 = (char*)malloc(tamanho_bloco);
+
+    //Buffer contém o caminho do diretório pai
+    buffer = get_caminho_do_pai(nome);
+    
+    //diretorio contem o descritor  e o bloco_diretorio o diretorio onde o descritor está
+    diretorio = get_descritor_arquivo(buffer);
+    bloco_diretorio=caminho_valido(buffer);
+    
+    
+    //printf("NOOme: %d\n", bloco_diretorio);
+
+    if(diretorio->dataPtr[0]==INVALIDO){
+        diretorio->dataPtr[0] = bloco_livre;
+        diretorio->blocksFileSize++; // Foi acrescentado mais um bloco ao diretório, logo aumenta o número de blocos
+        diretorio->bytesFileSize += tamanho_bloco; // Analogo
+    }
+    else if(diretorio->dataPtr[1]==INVALIDO){
+        diretorio->dataPtr[1] = bloco_livre;
+        diretorio->blocksFileSize++;
+        diretorio->bytesFileSize += tamanho_bloco;
+    }
+    else if(diretorio->singleIndPtr==INVALIDO)
+    {
+        bloco_diretorio2=criablocoenderecos();
+        diretorio->singleIndPtr = bloco_diretorio2;
+    }
+    else if(diretorio->singleIndPtr!=INVALIDO)
+    {
+        buffer = le_bloco(diretorio->singleIndPtr); 
+         for(i = 0; i<tamanho_bloco; i+=4) 
+            { 
+                end = buffer[i+3]<<24 | buffer[i+2]<<16 | buffer[i+1]<<8| buffer[i];
+                //Se bloco end representa um bloco livre
+                //      endereo = bloco_livre
+            }
+    }
+    else if(diretorio->doubleIndPtr!=INVALIDO)
+    {
+        buffer = le_bloco(diretorio->doubleIndPtr); 
+         for(i = 0; i<tamanho_bloco; i+=4) 
+            { 
+                end = buffer[i+3]<<24 | buffer[i+2]<<16 | buffer[i+1]<<8| buffer[i];
+                //Se bloco end representa um bloco livre
+                //      endereo = bloco_livre
+            }
+    }
+
+    
+    //Grava descritor do diretório pai de volta no disco
+    buffer=inodeparachar(diretorio);
+    escrever_bloco(buffer,bloco_diretorio);
+    
+    return TRUE;
+    //diretorio=get_descritor_arquivo(buffer);
+
+}*/
