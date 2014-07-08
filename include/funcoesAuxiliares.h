@@ -4,9 +4,6 @@
 #include "t2fs.h"
 
 
-
-
-
 typedef struct aberto
 {
 	DWORD handle;
@@ -15,7 +12,7 @@ typedef struct aberto
 }ARQUIVOABERTO;
 ARQUIVOABERTO arquivosabertos[20];
 void init(void);//inicializações
-
+void printAbertos(void); // Auxiliar da auxiliar, imprime o vetor de arquivos abertos, bora deltar depois
 void inicializavetorabertos();//invalida todos os handles do vetor de abertos
 int marcarabertos(DWORD, DWORD);//procura um handle invalido no vetor de abertos e o preenche com dados válidos
 int alteracurentpoiter(DWORD handle, DWORD currentpointer);//varre a lista de arquivos abertos e altera current pointer
@@ -64,8 +61,8 @@ struct registro_bloco* procura_descritor_num_diretorio(char* nome, DWORD* offset
 																													Assume que ponteiro já venha alocado*/
 DWORD procura_descritores(int niveis, char* caminho, char* final, struct registro_bloco* descritor);//Retorna bloco do descritor
 DWORD caminho_valido(char* caminho); /* Há três retornos:
-									-1: caminho inválido (char* vazio, não comece com '/', nao tenha algum diretorio do meio)
-									 0: caminho válido, mas o arquivo ao final do caminho não existe no diretório
+									-2: caminho inválido (char* vazio, não comece com '/', nao tenha algum diretorio do meio)
+									 -1: caminho válido, mas o arquivo ao final do caminho não existe no diretório
 									 outro: bloco onde está o arquivo*/
 
 

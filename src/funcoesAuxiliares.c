@@ -4,12 +4,17 @@
 #include<stdio.h>
 #include<stdlib.h>
 
+BOOL iniciou = FALSE; // Se eu ponho, mesmo como static, no .h, da warning
+
 void init(void)
 {
-    tamanho_bloco = 0;
-	superbloco = leSuperBloco();
-    inicializavetorabertos();
-	
+    if(iniciou==FALSE)
+    {
+        iniciou=TRUE;    
+        tamanho_bloco = 0;
+    	superbloco = leSuperBloco();
+        inicializavetorabertos();
+    }
 }
 
 
@@ -404,7 +409,14 @@ DWORD* criablocoenderecos(DWORD *blocolivre)
 }
 
 
-
+void printAbertos(void)
+{
+    int i;
+    for(i=0;i<20;i++)
+    {
+        printf("%d ", arquivosabertos[i].handle);
+    }
+}
 
 char* nome_final(char* caminho)
 {
@@ -486,7 +498,7 @@ char* get_caminho_do_pai(char* caminho)
 
         return buffer;
     }
-    else if(niveis==1)
+    else if(niveis==1 || niveis ==0)
         return "/";
     else return caminho;
 }
@@ -746,7 +758,7 @@ DWORD procura_descritores(int niveis, char* caminho, char* final, struct registr
             descritor=procura_descritor_num_diretorio(subcaminho(caminho,i), ptr, descritor);
             if(descritor==NULL)
             {
-                return -1;
+                return -2;
             }
         }
         else
@@ -754,7 +766,7 @@ DWORD procura_descritores(int niveis, char* caminho, char* final, struct registr
             descritor=procura_descritor_num_diretorio(final, ptr, descritor);
             if(descritor==NULL)
             {
-                return 0;
+                return -1;
             }
         }
     }
@@ -770,7 +782,7 @@ DWORD caminho_valido(char* caminho)
 
     niveis = conta_niveis_caminho(caminho);
     if(niveis==-1) // Testa se o caminho está mal formatado
-        return -1;
+        return -2;
     descritor->bloco=procura_descritores(niveis,caminho,nome_final(caminho),descritor);
     return descritor->bloco;
 }
@@ -783,7 +795,7 @@ struct t2fs_record* get_descritor_arquivo(char* caminho)
     struct t2fs_record* arquivo = (struct t2fs_record*)malloc(sizeof(struct t2fs_record));
     descritor->registro=&raiz;
 
-    if(caminho_valido(caminho)>0)
+    if(caminho_valido(caminho)>=0)
     {
         niveis = conta_niveis_caminho(caminho);
         if(niveis==-1) // Testa se o caminho está mal formatado

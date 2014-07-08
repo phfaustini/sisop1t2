@@ -81,3 +81,40 @@ int t2fs_delete (char *nome)
 return 0;//arrumar retorno
 
 }
+
+
+int t2fs_close(t2fs_file handle)
+{
+	int i;
+
+	init();
+
+	for(i=0;i<20;i++)
+	{
+		if(arquivosabertos[i].handle == handle)
+		{
+			arquivosabertos[i].handle=INVALIDO;
+			return 0;
+		}
+	}
+	return INVALIDO;
+}
+
+t2fs_file t2fs_open(char* nome)
+{
+	init();
+
+	t2fs_file handle = caminho_valido(nome);
+	switch(handle)
+	{
+		case -2: 
+				return INVALIDO;
+		case -1: 
+				return INVALIDO;
+		default:
+				if(marcarabertos(handle,0)==1){
+					return handle;
+				}
+				else return INVALIDO;
+	}
+}

@@ -6,9 +6,10 @@
 int main(int argc, char *argv[])
 {
 	char *nome;	
-	nome = "/";
+	nome = "/dir1";
 	
 	//t2fs_delete (nome);
-	t2fs_create (nome);
+	//t2fs_create (nome);
+	printf("%d\n", t2fs_close(t2fs_open(nome)));
 	return 0;
 }
