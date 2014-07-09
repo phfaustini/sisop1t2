@@ -1,6 +1,7 @@
 #include "../include/apidisk.h"
 #include "../include/t2fs.h"
 #include "../include/funcoesAuxiliares.h"
+#include <string.h>
 #include<stdio.h>
 #include<stdlib.h>
 
@@ -66,20 +67,21 @@ char *t2fs_identify (void)
 
 int t2fs_delete (char *nome)
 {
-
-
 	init();
-	DWORD *listablocos = (DWORD*) malloc(superbloco->NofBlocks);
+
+	DWORD *listablocos=(DWORD*) malloc(superbloco->NofBlocks);;
 	struct t2fs_record* record = (struct t2fs_record*)malloc(tamanho_bloco);
+	t2fs_file handle = caminho_valido(nome);
+	printf("%d\n", handle);
+
+	if(handle<1)
+		return INVALIDO;
+	record=get_descritor_arquivo(nome);
 	
-	//record = carregaarquivo(caminho_valido(nome));
 	listablocos = listablocosarquivo(record, listablocos);
 	excluiarquivobitmap(listablocos);
 
-		
-
-return 0;//arrumar retorno
-
+	return 0;//arrumar retorno
 }
 
 
@@ -121,6 +123,7 @@ t2fs_file t2fs_open(char* nome)
 
 int t2fs_seek (t2fs_file handle, unsigned int offset)
 {
+	init();
 	int i;
 	for(i=0;i<20;i++)
 	{
@@ -143,5 +146,26 @@ int t2fs_seek (t2fs_file handle, unsigned int offset)
 		}
 	}
 	return INVALIDO;
-
 }
+
+/*int t2fs_read (t2fs_file handle, char *buffer, int size)
+{
+	init();
+	int i;
+	char* bloco = (char*)malloc(tamanho_bloco);
+	for(i=0;i<20;i++)
+	{
+		if (arquivosabertos[i].handle == handle)
+		{
+			struct t2fs_record* record = (struct t2fs_record*)malloc(sizeof(struct t2fs_record));
+			record = carregaarquivo(handle);
+			if(record->TypeVal!=1)
+				return INVALIDO;
+			if(arquivosabertos[i].currentpointer < tamanho_bloco && record->dataPtr[0]!=-1)
+			{
+				bloco=le_bloco(record->dataPtr[0]);
+				memcpy(buffer,bloco+currentpointer);
+			}
+		}
+	}
+}*/
